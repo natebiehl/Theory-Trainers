@@ -459,6 +459,10 @@ canvas{display:block;}
         <div class="nk-cfg-row"><label>Earn frets — timer drains on hesitation</label><label class="toggle"><input type="checkbox" id="g-cfg-prog" checked onchange="GN.onProgModeChange()"><span class="toggle-slider"></span></label></div>
         <div class="nk-cfg-row" style="margin-top:10px;"><label>Base fret</label><input class="fret-input" type="number" id="g-cfg-base-fret" value="0" min="0" max="12" onchange="GN.onBaseFretChange()"></div>
         <div class="range-hint">Starts at base fret. Unlocks alternate outward.</div>
+        <div class="cfg-row" style="margin-top:10px;"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="g-unlock-val">18</span></div>
+        <input type="range" min="6" max="24" value="18" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('g-unlock-val').textContent=this.value;GN.setUnlockAt(parseInt(this.value));">
+        <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="g-drop-val">3</span></div>
+        <input type="range" min="1" max="8" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('g-drop-val').textContent=this.value;GN.setDropAt(parseInt(this.value));">
       </div>
       <div class="nk-config-section">
         <div class="nk-config-title">Accidental Spelling</div>
@@ -619,6 +623,49 @@ function playKS(hz, vol=0.5, decay=0.98){
 }
 
 function midiToHz(m){ return 440*Math.pow(2,(m-69)/12); }
+
+// Level-up: quick ascending major arpeggio (C4 E4 G4 C5), staccato KS plucks
+function levelUpSound(){
+  const ctx=getAC();
+  const notes=[60,64,67,72]; // C4 E4 G4 C5
+  notes.forEach((midi,i)=>{
+    const t=ctx.currentTime+i*0.09;
+    const hz=midiToHz(midi);
+    const period=Math.round(ctx.sampleRate/hz);
+    const buf=new Float32Array(period);
+    for(let j=0;j<period;j++) buf[j]=Math.random()*2-1;
+    const ab=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.6),ctx.sampleRate);
+    const data=ab.getChannelData(0);
+    const ks=[...buf];
+    for(let j=0;j<data.length;j++){const idx=j%period;data[j]=ks[idx]*0.5;ks[idx]=(ks[idx]+ks[(idx+1)%period])*0.5*0.982;}
+    const src=ctx.createBufferSource();src.buffer=ab;
+    const gain=ctx.createGain();gain.gain.value=0.45;
+    src.connect(gain);gain.connect(ctx.destination);
+    src.start(t);
+  });
+}
+
+// Level-drop: two descending detuned thuds (G2 then D2), slow decay
+function levelDropSound(){
+  const ctx=getAC();
+  [43,38].forEach((midi,i)=>{
+    const t=ctx.currentTime+i*0.18;
+    const hz=midiToHz(midi);
+    const period=Math.round(ctx.sampleRate/hz);
+    const buf=new Float32Array(period);
+    for(let j=0;j<period;j++) buf[j]=Math.random()*2-1;
+    const ab=ctx.createBuffer(1,Math.floor(ctx.sampleRate*1.2),ctx.sampleRate);
+    const data=ab.getChannelData(0);
+    const ks=[...buf];
+    for(let j=0;j<data.length;j++){const idx=j%period;data[j]=ks[idx]*0.5;ks[idx]=(ks[idx]+ks[(idx+1)%period])*0.5*0.994;}
+    const src=ctx.createBufferSource();src.buffer=ab;
+    const gain=ctx.createGain();gain.gain.value=0.5;
+    // fast volume fade so it feels punchy not droning
+    gain.gain.setTargetAtTime(0,t+0.05,0.12);
+    src.connect(gain);gain.connect(ctx.destination);
+    src.start(t);
+  });
+}
 
 // Toast
 let _toastT=null;
@@ -798,7 +845,8 @@ const GN=(()=>{
   }
 
   // Progression
-  const UNLOCK_AT=12,DROP_AT=3,DRAIN_S=8,REWARD=0.40;
+  let UNLOCK_AT=18,DROP_AT=3;
+  const DRAIN_S=8,REWARD=0.40;
   let progBase=0,progLevel=0,progMinFret=0,progMaxFret=0,progRun=0,progMiss=0,progWarn=false;
   let progTFrac=0,progTRAF=null,progTLast=null;
   function getBaseFret(){return Math.max(0,Math.min(12,parseInt(document.getElementById('g-cfg-base-fret').value)||0));}
@@ -809,7 +857,7 @@ const GN=(()=>{
   function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
   function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('unlock');}}updateProgUI();}
   function updateProgUI(){const r=progRange(progBase,progLevel);const rs=r.min===r.max?'Fret '+r.min:'Frets '+r.min+'–'+r.max;document.getElementById('g-prog-label').textContent=rs;document.getElementById('g-prog-counter').textContent=progRun+' / '+UNLOCK_AT;const hp=(progRun/UNLOCK_AT)*50;const mp=Math.min(1,progMiss/DROP_AT*0.7+progTFrac*0.3)*50;document.getElementById('g-prog-bar-hit').style.width=hp+'%';document.getElementById('g-prog-bar-miss').style.width=mp+'%';const we=document.getElementById('g-prog-warning');if(progWarn&&progLevel>0){const pr=progRange(progBase,progLevel-1);const ps=pr.min===pr.max?'fret '+pr.min:'frets '+pr.min+'–'+pr.max;we.textContent='⚠ One more miss drops to '+ps;we.classList.add('show');}else we.classList.remove('show');}
-  function flashNeck(type){const nw=document.getElementById('g-neck-wrap');nw.classList.remove('flash-unlock-nk','flash-lock-nk');void nw.offsetWidth;nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');}
+  function flashNeck(type){const nw=document.getElementById('g-neck-wrap');nw.classList.remove('flash-unlock-nk','flash-lock-nk');void nw.offsetWidth;nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');if(type==='unlock')levelUpSound();else levelDropSound();}
   function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();buildDeck();buildQuestion();}
   function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();buildDeck();buildQuestion();updateProgUI();}}
 
@@ -946,6 +994,8 @@ const GN=(()=>{
   function resetAll(){correct=0;total=0;dots=[];srData={};lastCards=[];deck=[];deckPos=0;progInit();if(document.getElementById('g-cfg-prog').checked)startProgTimer();buildDeck();updateStats();updateProgUI();document.getElementById('g-neck-feedback').textContent='';buildQuestion();}
 
   return{buildQuestion,setAccSpelling,onRangeChange,redrawCurrent,switchTab,toggleCfg,resetAll,onProgModeChange,onBaseFretChange,
+    setUnlockAt(v){UNLOCK_AT=v;updateProgUI();},
+    setDropAt(v){DROP_AT=v;updateProgUI();},
     _reveal(){drawNeckQ(true);document.getElementById('g-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="GN.buildQuestion()" style="width:100%;margin-top:4px">Next →</button>';},
     init(){progInit();startProgTimer();buildDeck();buildQuestion();updateStats();updateProgUI();}};
 })();
