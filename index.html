@@ -854,35 +854,52 @@ const GN=(()=>{
   function progInit(){progBase=getBaseFret();progLevel=0;progRun=0;progMiss=0;progWarn=false;progTFrac=0;const r=progRange(progBase,0);progMinFret=r.min;progMaxFret=r.max;}
   function startProgTimer(){stopProgTimer();progTLast=performance.now();(function tick(now){if(!document.getElementById('g-cfg-prog').checked){progTRAF=null;return;}const dt=(now-progTLast)/1000;progTLast=now;progTFrac=Math.min(1,progTFrac+dt/DRAIN_S);updateProgUI();if(progTFrac>=1){progTFrac=0;triggerMiss();}progTRAF=requestAnimationFrame(tick);})(performance.now());}
   function stopProgTimer(){if(progTRAF){cancelAnimationFrame(progTRAF);progTRAF=null;}progTLast=null;}
-  function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
-  function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('unlock');}}updateProgUI();}
+  function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;deckCount=0;buildDeck();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
+  function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;deckCount=0;buildDeck();flashNeck('unlock');}}updateProgUI();}
   function updateProgUI(){const r=progRange(progBase,progLevel);const rs=r.min===r.max?'Fret '+r.min:'Frets '+r.min+'–'+r.max;document.getElementById('g-prog-label').textContent=rs;document.getElementById('g-prog-counter').textContent=progRun+' / '+UNLOCK_AT;const hp=(progRun/UNLOCK_AT)*50;const mp=Math.min(1,progMiss/DROP_AT*0.7+progTFrac*0.3)*50;document.getElementById('g-prog-bar-hit').style.width=hp+'%';document.getElementById('g-prog-bar-miss').style.width=mp+'%';const we=document.getElementById('g-prog-warning');if(progWarn&&progLevel>0){const pr=progRange(progBase,progLevel-1);const ps=pr.min===pr.max?'fret '+pr.min:'frets '+pr.min+'–'+pr.max;we.textContent='⚠ One more miss drops to '+ps;we.classList.add('show');}else we.classList.remove('show');}
   function flashNeck(type){const nw=document.getElementById('g-neck-wrap');nw.classList.remove('flash-unlock-nk','flash-lock-nk');void nw.offsetWidth;nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');if(type==='unlock')levelUpSound();else levelDropSound();}
-  function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();buildDeck();buildQuestion();}
-  function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();buildDeck();buildQuestion();updateProgUI();}}
+  function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();deckCount=0;buildDeck();buildQuestion();}
+  function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();deckCount=0;buildDeck();buildQuestion();updateProgUI();}}
 
-  // SR — hardcoded Deep weights, scale 1–4
-  let srData={};
+  // SR — frequency-based spaced repetition
+  // srTier returns how often a position appears across deck passes:
+  //   tier 0 (unseen / struggling < 0.5)  → every deck       (freq 1)
+  //   tier 1 (getting there  0.5–0.75)    → every 2nd deck   (freq 2)
+  //   tier 2 (pretty good    0.75–0.9)    → every 3rd deck   (freq 3)
+  //   tier 3 (mastered       >= 0.9)      → every 5th deck   (freq 5)
+  // Each position that IS in a deck appears exactly once — no clustering.
+  const SR_FREQ=[1,2,3,5];
+  let srData={},deckCount=0;
   function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0};return srData[k];}
   function srRecord(s,f,hit,slow){
     const d=srGet(s,f);
     d.total++;
     if(hit) d.correct+=(slow?0.5:1);
   }
-  function srWeight(s,f){const d=srGet(s,f);const acc=d.total>0?d.correct/d.total:-1;return d.total===0?4:acc<0.5?4:acc<0.75?3:acc<0.9?2:1;}
+  function srTier(s,f){
+    const d=srGet(s,f);
+    if(d.total===0) return 0;
+    const acc=d.correct/d.total;
+    return acc<0.5?0:acc<0.75?1:acc<0.9?2:3;
+  }
 
-  // Shuffled deck — guarantees full coverage before any position repeats
+  // Shuffled deck — one copy of each eligible position, full coverage per pass
   let deck=[],deckPos=0,neckCard=null,lastCards=[],cardStartTime=0;
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
   function buildDeck(){
     const{min,max}=getFretRange();
     deck=[];
     for(let s=0;s<6;s++) for(let f=min;f<=max;f++){
-      const w=srWeight(s,f);
-      for(let i=0;i<w;i++) deck.push({s,f});
+      const freq=SR_FREQ[srTier(s,f)];
+      if(deckCount%freq===0) deck.push({s,f});
+    }
+    // safety: if deck is empty (all positions on off-cycles), include everything
+    if(!deck.length){
+      for(let s=0;s<6;s++) for(let f=min;f<=max;f++) deck.push({s,f});
     }
     shuffle(deck);
     deckPos=0;
+    deckCount++;
   }
   function drawCard(){
     if(deckPos>=deck.length) buildDeck();
@@ -987,11 +1004,11 @@ const GN=(()=>{
   function drawRefNeck(hl){const canvas=document.getElementById('g-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('g-ref-note').textContent=lbl;document.getElementById('g-ref-label').textContent='S'+(s+1)+' · Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
 
   function setAccSpelling(mode){accSpelling=mode;document.querySelectorAll('#g-acc-spelling-toggle button').forEach((b,i)=>b.classList.toggle('active',['sharp','flat','both'][i]===mode));if(neckCard)buildAnswerGrid();}
-  function onRangeChange(){buildDeck();buildQuestion();}
+  function onRangeChange(){deckCount=0;buildDeck();buildQuestion();}
   function redrawCurrent(){if(activeTab==='neck'&&neckCard)drawNeckQ(false);if(activeTab==='ref')setTimeout(drawRefNeck,50);}
   function switchTab(name){activeTab=name;document.querySelectorAll('#app-guitar .itab').forEach((b,i)=>b.classList.toggle('active',['neck','ref'][i]===name));document.querySelectorAll('#app-guitar .nk-screen').forEach(s=>s.classList.remove('active'));document.getElementById('g-screen-'+name).classList.add('active');if(name==='ref')setTimeout(()=>drawRefNeck(refHL),50);if(name==='neck')setTimeout(()=>{if(neckCard)drawNeckQ(false);},50);}
   function toggleCfg(){const p=document.getElementById('g-cfg-panel');const b=document.getElementById('g-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';}
-  function resetAll(){correct=0;total=0;dots=[];srData={};lastCards=[];deck=[];deckPos=0;progInit();if(document.getElementById('g-cfg-prog').checked)startProgTimer();buildDeck();updateStats();updateProgUI();document.getElementById('g-neck-feedback').textContent='';buildQuestion();}
+  function resetAll(){correct=0;total=0;dots=[];srData={};lastCards=[];deck=[];deckPos=0;deckCount=0;progInit();if(document.getElementById('g-cfg-prog').checked)startProgTimer();buildDeck();updateStats();updateProgUI();document.getElementById('g-neck-feedback').textContent='';buildQuestion();}
 
   return{buildQuestion,setAccSpelling,onRangeChange,redrawCurrent,switchTab,toggleCfg,resetAll,onProgModeChange,onBaseFretChange,
     setUnlockAt(v){UNLOCK_AT=v;updateProgUI();},
