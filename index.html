@@ -645,7 +645,7 @@ function levelUpSound(){
   });
 }
 
-// Level-drop: two descending detuned thuds (G2 then D2), slow decay
+// Level-drop: two descending thuds (G2 then D2), short and punchy
 function levelDropSound(){
   const ctx=getAC();
   [43,38].forEach((midi,i)=>{
@@ -654,14 +654,13 @@ function levelDropSound(){
     const period=Math.round(ctx.sampleRate/hz);
     const buf=new Float32Array(period);
     for(let j=0;j<period;j++) buf[j]=Math.random()*2-1;
-    const ab=ctx.createBuffer(1,Math.floor(ctx.sampleRate*1.2),ctx.sampleRate);
+    const ab=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.5),ctx.sampleRate);
     const data=ab.getChannelData(0);
     const ks=[...buf];
-    for(let j=0;j<data.length;j++){const idx=j%period;data[j]=ks[idx]*0.5;ks[idx]=(ks[idx]+ks[(idx+1)%period])*0.5*0.994;}
+    for(let j=0;j<data.length;j++){const idx=j%period;data[j]=ks[idx]*0.5;ks[idx]=(ks[idx]+ks[(idx+1)%period])*0.5*0.988;}
     const src=ctx.createBufferSource();src.buffer=ab;
     const gain=ctx.createGain();gain.gain.value=0.5;
-    // fast volume fade so it feels punchy not droning
-    gain.gain.setTargetAtTime(0,t+0.05,0.12);
+    gain.gain.setTargetAtTime(0,t+0.05,0.08);
     src.connect(gain);gain.connect(ctx.destination);
     src.start(t);
   });
@@ -691,7 +690,36 @@ function switchApp(name){
   else{ TR.stopTimer(); DI.stopTimer(); }
   if(name==='guitar') setTimeout(()=>GN.redrawCurrent(),50);
   if(name==='steel')  setTimeout(()=>SN.redrawCurrent(),50);
+  rotationTimer.onSwitch(name);
 }
+
+// ── 15-MINUTE ROTATION REMINDER ──────────────────────────────────────────────
+// Tracks active time per module. After 15 minutes on one drill, shows a toast
+// suggesting a switch. Resets when the user actually switches.
+const rotationTimer=(()=>{
+  const REMIND_MS=15*60*1000;
+  const NAMES={triads:'Missing Note',diatonic:'Diatonic',guitar:'Guitar Neck',steel:'Steel Neck'};
+  const OTHERS={triads:['Diatonic','Guitar Neck','Steel Neck'],diatonic:['Missing Note','Guitar Neck','Steel Neck'],guitar:['Missing Note','Diatonic','Steel Neck'],steel:['Missing Note','Diatonic','Guitar Neck']};
+  let current=null,elapsed=0,lastTick=null,raf=null,fired=false;
+
+  function tick(now){
+    if(!current){raf=null;return;}
+    elapsed+=now-lastTick;lastTick=now;
+    if(!fired&&elapsed>=REMIND_MS){
+      fired=true;
+      const others=OTHERS[current];
+      showToast('Time to switch!',others[Math.floor(Math.random()*others.length)]+' →');
+    }
+    raf=requestAnimationFrame(tick);
+  }
+  function onSwitch(name){
+    if(raf){cancelAnimationFrame(raf);raf=null;}
+    if(name!==current){elapsed=0;fired=false;}
+    current=name;lastTick=performance.now();
+    raf=requestAnimationFrame(tick);
+  }
+  return{onSwitch};
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TRIAD GAME — TR
@@ -707,7 +735,17 @@ const TR=(()=>{
   function respell(notes,root){const rs=TO_SHARP[root]||root;const uf=FLAT_ROOTS.has(rs)||FLAT_ROOTS.has(root);return notes.map(n=>uf?(TO_FLAT[n]||n):n);}
   function buildTriad(root,type,inv){const rs=TO_SHARP[root]||root;const ri=ALL_NOTES.indexOf(rs);const base=IVLS[type].map(i=>ALL_NOTES[(ri+i)%12]);const rot=[...base];for(let i=0;i<inv;i++)rot.push(rot.shift());return respell(rot,rs);}
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-  function genPool(){const roots=['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db'];const phases=[{type:'major',inv:0},{type:'minor',inv:0},{type:'dim',inv:0},{type:'aug',inv:0},{type:'major',inv:1},{type:'minor',inv:1},{type:'major',inv:2},{type:'minor',inv:2},{type:'dim',inv:1},{type:'aug',inv:1},{type:'dim',inv:2},{type:'aug',inv:2}];const o=[];for(const p of phases)for(const r of shuffle([...roots]))o.push({root:r,...p});return o;}
+
+  // White keys first, then accidentals — this is the unlock progression order
+  function genPool(){
+    const roots=['C','D','E','F','G','A','B','F#','Bb','Eb','Ab','Db'];
+    const phases=[{type:'major',inv:0},{type:'minor',inv:0},{type:'dim',inv:0},{type:'aug',inv:0},
+                  {type:'major',inv:1},{type:'minor',inv:1},{type:'major',inv:2},{type:'minor',inv:2},
+                  {type:'dim',inv:1},{type:'aug',inv:1},{type:'dim',inv:2},{type:'aug',inv:2}];
+    const o=[];
+    for(const p of phases) for(const r of roots) o.push({root:r,...p});
+    return o;
+  }
   const MASTER=genPool();
 
   let UNLOCK_NEEDED=5,DROP_NEEDED=3,TIMER_S=9;
@@ -715,8 +753,68 @@ const TR=(()=>{
   let aTypes=new Set(['major','minor','dim','aug']),aPos=new Set([0,1,2]),aInv=new Set([0]);
   let correct=0,total=0,dots=[],q=null,answered=false,tFrac=1,tRAF=null,tLast=null;
 
-  function getPool(){const seen=new Set(),pool=[];for(let i=0;i<Math.min(unlocked,MASTER.length);i++){const e=MASTER[i];if(!aTypes.has(e.type))continue;const inv=aInv.has(e.inv)?e.inv:0;const k=e.root+'|'+e.type+'|'+inv;if(seen.has(k))continue;seen.add(k);pool.push({...e,inv});}return pool.length?pool:[MASTER[0]];}
-  function pick(){const pool=getPool();const p=pool[Math.floor(Math.random()*pool.length)];const notes=buildTriad(p.root,p.type,p.inv);const pos=[...aPos];const mp=pos[Math.floor(Math.random()*pos.length)];return{...p,notes,missingPos:mp,correctNote:notes[mp]};}
+  // SR deck — nextDeck scheduling, same model as GN
+  // tier 0 unseen / tier 1 struggling → freq 1 | tier 2 → freq 2 | tier 3 → freq 4 | tier 4 mastered → freq 8
+  const TR_SR_FREQ=[1,1,2,4,8];
+  let trSR={},trDeckCount=0,trDeck=[],trDeckPos=0,trLastCards=[];
+  function trKey(e){return e.root+'|'+e.type+'|'+e.inv;}
+  function trSRGet(k){if(!trSR[k])trSR[k]={correct:0,total:0,nextDeck:0};return trSR[k];}
+  function trSRRecord(k,hit){const d=trSRGet(k);d.total++;if(hit)d.correct++;}
+  function trSRTier(k){
+    const d=trSRGet(k);if(d.total===0)return 0;
+    const acc=d.correct/d.total;
+    if(acc<0.5)return 1;if(acc<0.75)return 2;if(acc<0.9)return 3;
+    return d.total>=3?4:3;
+  }
+  function trBuildDeck(){
+    // collect eligible cards from unlocked MASTER entries, filtered by active settings
+    const seen=new Set();
+    const candidates=[];
+    for(let i=0;i<Math.min(unlocked,MASTER.length);i++){
+      const e=MASTER[i];
+      if(!aTypes.has(e.type))continue;
+      const inv=aInv.has(e.inv)?e.inv:0;
+      const k=e.root+'|'+e.type+'|'+inv;
+      if(seen.has(k))continue;seen.add(k);
+      const d=trSRGet(k);
+      if(trDeckCount>=d.nextDeck){
+        candidates.push({...e,inv,_k:k});
+        d.nextDeck=trDeckCount+TR_SR_FREQ[trSRTier(k)];
+      }
+    }
+    if(!candidates.length){
+      // everything on future cycles — pull all unlocked eligible cards
+      seen.clear();
+      for(let i=0;i<Math.min(unlocked,MASTER.length);i++){
+        const e=MASTER[i];
+        if(!aTypes.has(e.type))continue;
+        const inv=aInv.has(e.inv)?e.inv:0;
+        const k=e.root+'|'+e.type+'|'+inv;
+        if(seen.has(k))continue;seen.add(k);
+        const d=trSRGet(k);
+        candidates.push({...e,inv,_k:k});
+        d.nextDeck=trDeckCount+TR_SR_FREQ[trSRTier(k)];
+      }
+    }
+    trDeck=shuffle(candidates);
+    trDeckPos=0;
+    trDeckCount++;
+  }
+  function trDrawCard(){if(trDeckPos>=trDeck.length)trBuildDeck();return trDeck[trDeckPos++];}
+
+  function pick(){
+    if(!trDeck.length)trBuildDeck();
+    let card=trDrawCard();
+    // no-triple-repeat guard
+    if(trLastCards.length===2&&trLastCards[0]===card._k&&trLastCards[1]===card._k){
+      if(trDeckPos<trDeck.length)card=trDeck[trDeckPos++];
+    }
+    trLastCards.push(card._k);if(trLastCards.length>2)trLastCards.shift();
+    const notes=buildTriad(card.root,card.type,card.inv);
+    const pos=[...aPos];
+    const mp=pos[Math.floor(Math.random()*pos.length)];
+    return{...card,notes,missingPos:mp,correctNote:notes[mp]};
+  }
 
   function startTimer(){stopTimer();tLast=performance.now();(function tick(now){if(answered){tRAF=null;return;}const dt=(now-tLast)/1000;tLast=now;tFrac=Math.max(0,tFrac-dt/TIMER_S);renderTimer();if(tFrac<=0){tRAF=null;onTimeout();}else tRAF=requestAnimationFrame(tick);})(performance.now());}
   function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
@@ -735,7 +833,7 @@ const TR=(()=>{
   function drawStaff(notes,missingPos,revealed){const svg=document.getElementById('tr-staff-svg');const W=210,H=100,ls=9,st=18;function sy(s){return st+(10-s)*(ls/2);}function ns(n){return LETTERS.indexOf(n[0].toUpperCase());}let slots=notes.map(ns);for(let i=1;i<slots.length;i++)while(slots[i]<=slots[i-1])slots[i]+=7;const mn=Math.min(...slots);if(mn<0)slots=slots.map(s=>s+7);const mx=Math.max(...slots);if(mx>11)slots=slots.map(s=>s-7);let h='';for(let i=0;i<5;i++){const y=st+i*ls;h+=`<line x1="32" y1="${y}" x2="${W-8}" y2="${y}" stroke="rgba(232,228,218,0.25)" stroke-width="1"/>"`;}h+=`<text x="29" y="${st+30}" font-size="48" fill="rgba(200,168,75,0.6)" font-family="serif" text-anchor="middle">𝄞</text>`;const nx=[85,120,155];for(let i=0;i<slots.length;i++){const sl=slots[i];const y=sy(sl);const x=nx[i];const im=i===missingPos;const ih=im&&!revealed;const dn=nd(notes[i]);if(sl<=1)h+=`<line x1="${x-13}" y1="${sy(2)-ls}" x2="${x+13}" y2="${sy(2)-ls}" stroke="rgba(232,228,218,0.3)" stroke-width="1"/>`;const col=ih?'rgba(200,168,75,0.2)':(im?'var(--teal)':'var(--accent)');h+=`<ellipse cx="${x}" cy="${y}" rx="6.5" ry="5" fill="${col}" transform="rotate(-15,${x},${y})"/>`;if(!ih){h+=`<line x1="${x+6}" y1="${y}" x2="${x+6}" y2="${y-26}" stroke="${col}" stroke-width="1.5"/>`;if(dn.includes('#'))h+=`<text x="${x-15}" y="${y+4}" font-size="13" fill="${col}" font-family="serif">#</text>`;if(dn.endsWith('b'))h+=`<text x="${x-13}" y="${y+5}" font-size="14" fill="${col}" font-family="serif">♭</text>`;}else h+=`<text x="${x}" y="${y+4}" font-size="12" fill="rgba(200,168,75,0.4)" font-family="IBM Plex Mono,monospace" text-anchor="middle">?</text>`;h+=`<text x="${x}" y="${H-3}" font-size="8" fill="${ih?'rgba(200,168,75,0.2)':'rgba(127,191,176,0.7)'}" font-family="IBM Plex Mono,monospace" text-anchor="middle">${ih?'?':dn}</text>`;}svg.innerHTML=h;}
 
   function buildGrid(useFlats){const grid=document.getElementById('tr-note-grid');grid.innerHTML='';const nat=['C','D','E','F','G','A','B'];const acc=useFlats?['Db','Eb','Gb','Ab','Bb']:['C#','D#','F#','G#','A#'];[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
-  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');reveal();updateStats();setTimeout(next,750);}else{dots.push(false);btn.classList.add('wrong');onMiss();if(document.getElementById('tr-reveal-on-wrong').checked){document.querySelectorAll('#tr-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});reveal();}setFb('Wrong — '+nd(q.correctNote,q.root),'wrong');updateStats();setTimeout(next,1400);}}
+  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);trSRRecord(q._k,hit);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');reveal();updateStats();setTimeout(next,750);}else{dots.push(false);btn.classList.add('wrong');onMiss();if(document.getElementById('tr-reveal-on-wrong').checked){document.querySelectorAll('#tr-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});reveal();}setFb('Wrong — '+nd(q.correctNote,q.root),'wrong');updateStats();setTimeout(next,1400);}}
 
   function next(){answered=false;setFb('','');q=pick();const rs=TO_SHARP[q.root]||q.root;buildGrid(FLAT_ROOTS.has(rs)||FLAT_ROOTS.has(q.root));tFrac=1;renderTimer();drawQ(q,false);startTimer();}
   function updateStats(){document.getElementById('tr-h-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('tr-h-streak').textContent=s;document.getElementById('tr-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('tr-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');}
@@ -746,7 +844,7 @@ const TR=(()=>{
   function toggleInv(btn){const i=parseInt(btn.dataset.i);if(aInv.has(i)){if(aInv.size>1){aInv.delete(i);btn.classList.remove('on');}}else{aInv.add(i);btn.classList.add('on');}}
   function setSpeed(btn){document.querySelectorAll('#tr-cfg-panel .speed-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');TIMER_S=parseFloat(btn.dataset.s);}
   function redraw(){if(q)drawQ(q,answered);}
-  function resetAll(){correct=0;total=0;dots=[];unlocked=1;progHits=0;progMisses=0;updateStats();updateProgUI();next();}
+  function resetAll(){correct=0;total=0;dots=[];unlocked=1;progHits=0;progMisses=0;trSR={};trDeck=[];trDeckPos=0;trDeckCount=0;trLastCards=[];updateStats();updateProgUI();next();}
 
   return{startTimer,stopTimer,toggleCfg,toggleType,togglePos,toggleInv,setSpeed,redraw,resetAll,
     get answered(){return answered;},
@@ -768,7 +866,55 @@ const DI=(()=>{
   let correct=0,total=0,dots=[],q=null,answered=false,tFrac=1,tRAF=null,tLast=null;
 
   function getRoot(key,di){const ki=nIdx(key);const sharp=ALL_NOTES[(ki+DIAT[di].semi)%12];const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);return uf?(TO_FLAT[sharp]||sharp):sharp;}
-  function pick(){const keys=D_KEYS.slice(0,unlockedKeys);const degs=D_TIERS[tier].degrees;const key=keys[Math.floor(Math.random()*keys.length)];const di=degs[Math.floor(Math.random()*degs.length)];const root=getRoot(key,di);return{key,di,degree:DIAT[di],root,correctNote:root};}
+
+  // SR deck — same nextDeck model as GN/TR
+  const DI_SR_FREQ=[1,1,2,4,8];
+  let diSR={},diDeckCount=0,diDeck=[],diDeckPos=0,diLastCards=[];
+  function diKey(key,di){return key+'|'+di;}
+  function diSRGet(k){if(!diSR[k])diSR[k]={correct:0,total:0,nextDeck:0};return diSR[k];}
+  function diSRRecord(k,hit){const d=diSRGet(k);d.total++;if(hit)d.correct++;}
+  function diSRTier(k){
+    const d=diSRGet(k);if(d.total===0)return 0;
+    const acc=d.correct/d.total;
+    if(acc<0.5)return 1;if(acc<0.75)return 2;if(acc<0.9)return 3;
+    return d.total>=3?4:3;
+  }
+  function diBuildDeck(){
+    const keys=D_KEYS.slice(0,unlockedKeys);
+    const degs=D_TIERS[tier].degrees;
+    const candidates=[];
+    for(const key of keys) for(const di of degs){
+      const k=diKey(key,di);
+      const d=diSRGet(k);
+      if(diDeckCount>=d.nextDeck){
+        candidates.push({key,di,_k:k});
+        d.nextDeck=diDeckCount+DI_SR_FREQ[diSRTier(k)];
+      }
+    }
+    if(!candidates.length){
+      for(const key of keys) for(const di of degs){
+        const k=diKey(key,di);
+        const d=diSRGet(k);
+        candidates.push({key,di,_k:k});
+        d.nextDeck=diDeckCount+DI_SR_FREQ[diSRTier(k)];
+      }
+    }
+    // shuffle
+    for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}
+    diDeck=candidates;diDeckPos=0;diDeckCount++;
+  }
+  function diDrawCard(){if(diDeckPos>=diDeck.length)diBuildDeck();return diDeck[diDeckPos++];}
+
+  function pick(){
+    if(!diDeck.length)diBuildDeck();
+    let card=diDrawCard();
+    if(diLastCards.length===2&&diLastCards[0]===card._k&&diLastCards[1]===card._k){
+      if(diDeckPos<diDeck.length)card=diDeck[diDeckPos++];
+    }
+    diLastCards.push(card._k);if(diLastCards.length>2)diLastCards.shift();
+    const root=getRoot(card.key,card.di);
+    return{key:card.key,di:card.di,_k:card._k,degree:DIAT[card.di],root,correctNote:root};
+  }
 
   function startTimer(){stopTimer();tLast=performance.now();(function tick(now){if(answered){tRAF=null;return;}const dt=(now-tLast)/1000;tLast=now;tFrac=Math.max(0,tFrac-dt/TIMER_S);renderTimer();if(tFrac<=0){tRAF=null;onTimeout();}else tRAF=requestAnimationFrame(tick);})(performance.now());}
   function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
@@ -784,7 +930,7 @@ const DI=(()=>{
   function revealQ(){drawQ(q,true);document.querySelectorAll('#d-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});}
 
   function buildGrid(key){const grid=document.getElementById('d-note-grid');grid.innerHTML='';const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);const nat=['C','D','E','F','G','A','B'];const acc=uf?['Db','Eb','Gb','Ab','Bb']:['C#','D#','F#','G#','A#'];[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
-  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');revealQ();updateStats();setTimeout(next,800);}else{dots.push(false);btn.classList.add('wrong');onMiss();revealQ();setFb('Wrong — '+q.correctNote,'wrong');updateStats();setTimeout(next,1400);}}
+  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);diSRRecord(q._k,hit);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');revealQ();updateStats();setTimeout(next,800);}else{dots.push(false);btn.classList.add('wrong');onMiss();revealQ();setFb('Wrong — '+q.correctNote,'wrong');updateStats();setTimeout(next,1400);}}
 
   function next(){answered=false;setFb('','');q=pick();tFrac=1;renderTimer();buildGrid(q.key);drawQ(q,false);startTimer();}
   function updateStats(){document.getElementById('d-h-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('d-h-streak').textContent=s;document.getElementById('d-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('d-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');}
@@ -792,7 +938,7 @@ const DI=(()=>{
   function toggleCfg(){const p=document.getElementById('d-cfg-panel');const b=document.getElementById('d-cfg-btn');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';if(o)stopTimer();else if(!answered)startTimer();}
   function redraw(){if(q)drawQ(q,answered);}
   function setSpeed(btn){document.querySelectorAll('#d-cfg-panel .speed-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');TIMER_S=parseFloat(btn.dataset.s);}
-  function resetAll(){correct=0;total=0;dots=[];tier=0;unlockedKeys=1;hits=0;misses=0;updateProgUI();updateStats();next();}
+  function resetAll(){correct=0;total=0;dots=[];tier=0;unlockedKeys=1;hits=0;misses=0;diSR={};diDeck=[];diDeckPos=0;diDeckCount=0;diLastCards=[];updateProgUI();updateStats();next();}
 
   return{startTimer,stopTimer,toggleCfg,setSpeed,redraw,resetAll,
     get answered(){return answered;},
@@ -854,23 +1000,25 @@ const GN=(()=>{
   function progInit(){progBase=getBaseFret();progLevel=0;progRun=0;progMiss=0;progWarn=false;progTFrac=0;const r=progRange(progBase,0);progMinFret=r.min;progMaxFret=r.max;}
   function startProgTimer(){stopProgTimer();progTLast=performance.now();(function tick(now){if(!document.getElementById('g-cfg-prog').checked){progTRAF=null;return;}const dt=(now-progTLast)/1000;progTLast=now;progTFrac=Math.min(1,progTFrac+dt/DRAIN_S);updateProgUI();if(progTFrac>=1){progTFrac=0;triggerMiss();}progTRAF=requestAnimationFrame(tick);})(performance.now());}
   function stopProgTimer(){if(progTRAF){cancelAnimationFrame(progTRAF);progTRAF=null;}progTLast=null;}
-  function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;deckCount=0;buildDeck();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
-  function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;deckCount=0;buildDeck();flashNeck('unlock');}}updateProgUI();}
+  function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
+  function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('unlock');}}updateProgUI();}
   function updateProgUI(){const r=progRange(progBase,progLevel);const rs=r.min===r.max?'Fret '+r.min:'Frets '+r.min+'–'+r.max;document.getElementById('g-prog-label').textContent=rs;document.getElementById('g-prog-counter').textContent=progRun+' / '+UNLOCK_AT;const hp=(progRun/UNLOCK_AT)*50;const mp=Math.min(1,progMiss/DROP_AT*0.7+progTFrac*0.3)*50;document.getElementById('g-prog-bar-hit').style.width=hp+'%';document.getElementById('g-prog-bar-miss').style.width=mp+'%';const we=document.getElementById('g-prog-warning');if(progWarn&&progLevel>0){const pr=progRange(progBase,progLevel-1);const ps=pr.min===pr.max?'fret '+pr.min:'frets '+pr.min+'–'+pr.max;we.textContent='⚠ One more miss drops to '+ps;we.classList.add('show');}else we.classList.remove('show');}
   function flashNeck(type){const nw=document.getElementById('g-neck-wrap');nw.classList.remove('flash-unlock-nk','flash-lock-nk');void nw.offsetWidth;nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');if(type==='unlock')levelUpSound();else levelDropSound();}
-  function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();deckCount=0;buildDeck();buildQuestion();}
-  function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();deckCount=0;buildDeck();buildQuestion();updateProgUI();}}
+  function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();buildDeck();buildQuestion();}
+  function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();buildDeck();buildQuestion();updateProgUI();}}
 
-  // SR — frequency-based spaced repetition
-  // srTier returns how often a position appears across deck passes:
-  //   tier 0 (unseen / struggling < 0.5)  → every deck       (freq 1)
-  //   tier 1 (getting there  0.5–0.75)    → every 2nd deck   (freq 2)
-  //   tier 2 (pretty good    0.75–0.9)    → every 3rd deck   (freq 3)
-  //   tier 3 (mastered       >= 0.9)      → every 5th deck   (freq 5)
-  // Each position that IS in a deck appears exactly once — no clustering.
-  const SR_FREQ=[1,2,3,5];
+  // SR — nextDeck scheduling
+  // Each position tracks when it's next due (srData[k].nextDeck).
+  // After being dealt, nextDeck = deckCount + freq based on tier:
+  //   tier 0 — unseen                      → freq 1 (every deck)
+  //   tier 1 — acc < 0.5  (struggling)     → freq 1 (every deck)
+  //   tier 2 — acc 0.5–0.75                → freq 2 (every 2nd)
+  //   tier 3 — acc 0.75–0.9                → freq 4 (every 4th)
+  //   tier 4 — acc >= 0.9, total >= 3      → freq 8 (every 8th)
+  // One copy per position per deck — no clustering, full coverage each pass.
+  const SR_FREQ=[1,1,2,4,8];
   let srData={},deckCount=0;
-  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0};return srData[k];}
+  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0,nextDeck:0};return srData[k];}
   function srRecord(s,f,hit,slow){
     const d=srGet(s,f);
     d.total++;
@@ -880,22 +1028,32 @@ const GN=(()=>{
     const d=srGet(s,f);
     if(d.total===0) return 0;
     const acc=d.correct/d.total;
-    return acc<0.5?0:acc<0.75?1:acc<0.9?2:3;
+    if(acc<0.5) return 1;
+    if(acc<0.75) return 2;
+    if(acc<0.9) return 3;
+    return d.total>=3?4:3; // need 3 exposures before graduating to near-dormant
   }
 
-  // Shuffled deck — one copy of each eligible position, full coverage per pass
+  // Shuffled deck — one copy of each due position, full coverage per pass
   let deck=[],deckPos=0,neckCard=null,lastCards=[],cardStartTime=0;
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
   function buildDeck(){
     const{min,max}=getFretRange();
     deck=[];
     for(let s=0;s<6;s++) for(let f=min;f<=max;f++){
-      const freq=SR_FREQ[srTier(s,f)];
-      if(deckCount%freq===0) deck.push({s,f});
+      const d=srGet(s,f);
+      if(deckCount>=d.nextDeck){
+        deck.push({s,f});
+        d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
+      }
     }
-    // safety: if deck is empty (all positions on off-cycles), include everything
+    // safety: if everything is on a future cycle, pull in all overdue positions
     if(!deck.length){
-      for(let s=0;s<6;s++) for(let f=min;f<=max;f++) deck.push({s,f});
+      for(let s=0;s<6;s++) for(let f=min;f<=max;f++){
+        const d=srGet(s,f);
+        deck.push({s,f});
+        d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
+      }
     }
     shuffle(deck);
     deckPos=0;
@@ -1004,7 +1162,7 @@ const GN=(()=>{
   function drawRefNeck(hl){const canvas=document.getElementById('g-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('g-ref-note').textContent=lbl;document.getElementById('g-ref-label').textContent='S'+(s+1)+' · Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
 
   function setAccSpelling(mode){accSpelling=mode;document.querySelectorAll('#g-acc-spelling-toggle button').forEach((b,i)=>b.classList.toggle('active',['sharp','flat','both'][i]===mode));if(neckCard)buildAnswerGrid();}
-  function onRangeChange(){deckCount=0;buildDeck();buildQuestion();}
+  function onRangeChange(){buildDeck();buildQuestion();}
   function redrawCurrent(){if(activeTab==='neck'&&neckCard)drawNeckQ(false);if(activeTab==='ref')setTimeout(drawRefNeck,50);}
   function switchTab(name){activeTab=name;document.querySelectorAll('#app-guitar .itab').forEach((b,i)=>b.classList.toggle('active',['neck','ref'][i]===name));document.querySelectorAll('#app-guitar .nk-screen').forEach(s=>s.classList.remove('active'));document.getElementById('g-screen-'+name).classList.add('active');if(name==='ref')setTimeout(()=>drawRefNeck(refHL),50);if(name==='neck')setTimeout(()=>{if(neckCard)drawNeckQ(false);},50);}
   function toggleCfg(){const p=document.getElementById('g-cfg-panel');const b=document.getElementById('g-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';}
@@ -1106,6 +1264,7 @@ TR.init();
 DI.init();
 GN.init();
 SN.init();
+rotationTimer.onSwitch('triads');
 </script>
 </body>
 </html>
