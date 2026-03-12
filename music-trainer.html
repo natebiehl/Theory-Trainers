@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Music Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e0e;--panel:#161616;--panel2:#1b1b1b;
+  --border:#252525;--accent:#c8a84b;--teal:#7fbfb0;
+  --wrong:#c85c5c;--text:#e8e4da;--muted:#4a4a4a;--dim:#2e2e2e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+
+/* ── TOP NAV ── */
+.app-nav{width:100%;display:flex;border-bottom:2px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:50;}
+.app-tab{flex:1;padding:11px 4px 9px;text-align:center;font-size:9px;
+  letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:'IBM Plex Mono',monospace;}
+.app-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.app-screen{display:none;width:100%;flex-direction:column;align-items:center;}
+.app-screen.active{display:flex;}
+
+/* ── SHARED TRIAD STYLES ── */
+.t-header{width:100%;padding:11px 16px 9px;border-bottom:1px solid var(--border);
+  display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.t-header-left{display:flex;align-items:baseline;gap:10px;}
+.t-h1{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--accent);}
+.t-hsub{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.t-hstats{display:flex;gap:12px;align-items:center;}
+.t-hstat-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);line-height:1;}
+.t-hstat-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.t-main{width:100%;max-width:520px;padding:12px;display:flex;flex-direction:column;gap:11px;}
+
+.prog-section{display:flex;flex-direction:column;gap:5px;}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;}
+.prog-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.prog-counter{font-size:11px;color:var(--accent);}
+.prog-bar-track{height:5px;background:var(--dim);border-radius:3px;position:relative;overflow:hidden;}
+.prog-bar-fill{position:absolute;top:0;left:0;height:100%;background:var(--teal);border-radius:3px;transition:width .25s ease;}
+.prog-warning{font-size:10px;letter-spacing:1px;color:var(--wrong);text-align:right;height:14px;opacity:0;transition:opacity .2s;}
+.prog-warning.show{opacity:1;}
+.timer-track{height:3px;background:var(--dim);border-radius:2px;overflow:hidden;}
+.timer-fill{height:100%;border-radius:2px;transition:background .3s;}
+
+.triad-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:14px 12px 12px;display:flex;flex-direction:column;gap:10px;}
+.card-meta{display:flex;justify-content:space-between;align-items:center;}
+.card-type-badge{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  border:1px solid var(--dim);border-radius:2px;padding:2px 7px;}
+.card-inv-badge{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.missing-label{text-align:center;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.bubbles-row{display:flex;justify-content:center;gap:8px;align-items:stretch;}
+.note-bubble{flex:1;max-width:120px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:3px;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;gap:4px;}
+.note-bubble.is-missing{border-color:var(--accent);background:rgba(200,168,75,0.07);}
+.note-bubble.is-missing::before{content:'?';font-family:'Bebas Neue',sans-serif;font-size:38px;
+  color:rgba(200,168,75,0.25);line-height:1;display:block;margin-bottom:2px;}
+.bubble-note{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:22px;
+  color:var(--accent);letter-spacing:1px;line-height:1;min-height:26px;}
+.bubble-interval{font-size:9px;color:var(--teal);letter-spacing:1px;text-transform:uppercase;}
+.bubble-degree{font-size:9px;color:var(--muted);letter-spacing:.5px;}
+.staff-wrap{display:flex;justify-content:center;background:var(--panel2);border:1px solid var(--border);
+  border-radius:3px;padding:6px 4px 2px;}
+svg.staff{overflow:visible;}
+.feedback-line{text-align:center;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  height:16px;color:var(--teal);transition:color .15s;}
+.feedback-line.wrong{color:var(--wrong);}
+.feedback-line.timeout{color:rgba(200,92,92,0.7);}
+.answer-section{display:flex;flex-direction:column;gap:6px;}
+.answer-section-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.note-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;}
+.note-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.5px;padding:10px 2px;
+  border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,transform .08s;
+  text-align:center;line-height:1.2;}
+.note-btn:active{transform:scale(.93);}
+.note-btn.correct{background:var(--teal);border-color:var(--teal);color:#000;}
+.note-btn.wrong{background:var(--wrong);border-color:var(--wrong);color:#fff;}
+.note-btn:disabled{opacity:.4;cursor:default;}
+.streak-row{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--dim);}
+.sdot.h{background:var(--teal);}.sdot.m{background:var(--wrong);}
+.t-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  padding:9px 12px;cursor:pointer;border-radius:3px;transition:border-color .15s,color .15s;width:100%;}
+.t-btn:hover{border-color:var(--accent);color:var(--accent);}
+.t-btn.danger{border-color:var(--wrong);color:var(--wrong);}
+.cfg-panel{display:none;flex-direction:column;gap:10px;}
+.cfg-panel.open{display:flex;}
+.config-section{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:12px;display:flex;flex-direction:column;gap:10px;}
+.config-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  padding-bottom:6px;border-bottom:1px solid var(--dim);}
+.cfg-row{display:flex;align-items:center;gap:10px;}
+.cfg-row label:first-child{font-size:11px;color:var(--text);flex:1;letter-spacing:.5px;}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--dim);border-radius:20px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;
+  background:var(--muted);border-radius:50%;transition:transform .2s,background .2s;}
+.toggle input:checked+.toggle-slider{background:var(--accent);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px);background:#000;}
+.type-grid,.inv-grid,.speed-grid,.pos-grid{display:flex;gap:5px;}
+.type-btn,.inv-btn,.speed-btn,.pos-btn{flex:1;background:var(--panel2);border:1px solid var(--border);
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;
+  text-transform:uppercase;padding:8px 4px;cursor:pointer;border-radius:3px;transition:all .15s;text-align:center;}
+.type-btn[data-t="major"].on{background:#c8a84b;border-color:#c8a84b;color:#000;}
+.type-btn[data-t="minor"].on{background:#7fbfb0;border-color:#7fbfb0;color:#000;}
+.type-btn[data-t="dim"].on{background:#c85c5c;border-color:#c85c5c;color:#000;}
+.type-btn[data-t="aug"].on{background:#9b7fc8;border-color:#9b7fc8;color:#000;}
+.inv-btn.on,.speed-btn.on{background:var(--teal);border-color:var(--teal);color:#000;}
+.pos-btn.on{background:rgba(200,168,75,0.2);border-color:var(--accent);color:var(--accent);}
+@keyframes flashUnlock{0%,100%{background:var(--bg)}40%{background:rgba(127,191,176,0.08)}}
+@keyframes flashLock{0%,100%{background:var(--bg)}40%{background:rgba(200,92,92,0.08)}}
+.flash-unlock{animation:flashUnlock .6s ease;}
+.flash-lock{animation:flashLock .6s ease;}
+
+/* Diatonic card */
+.key-prompt-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:18px 12px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.key-prompt-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.key-prompt-key{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:52px;
+  color:var(--accent);letter-spacing:2px;line-height:1;}
+.key-prompt-degree{font-size:13px;color:var(--text);letter-spacing:2px;text-align:center;margin-top:2px;}
+.key-prompt-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:26px;
+  color:rgba(200,168,75,0.5);letter-spacing:2px;height:34px;line-height:1;}
+.degree-chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:2px;}
+.degree-chip{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;
+  border-radius:2px;border:1px solid var(--dim);color:var(--muted);background:var(--panel2);}
+.degree-chip.unlocked{border-color:var(--border);color:rgba(232,228,218,0.4);}
+.degree-chip.current{border-color:var(--accent);color:var(--accent);background:rgba(200,168,75,0.08);}
+.quality-badge{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;
+  border-radius:2px;border:1px solid var(--dim);color:var(--muted);}
+.quality-badge.major{border-color:rgba(200,168,75,0.4);color:var(--accent);}
+.quality-badge.minor{border-color:rgba(127,191,176,0.4);color:var(--teal);}
+.quality-badge.dim{border-color:rgba(200,92,92,0.4);color:var(--wrong);}
+
+/* ── GUITAR / STEEL SHARED ── */
+.neck-header{width:100%;padding:11px 18px 9px;border-bottom:1px solid var(--border);
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.neck-h1{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--accent);}
+.neck-hsub{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.inner-tabs{width:100%;display:flex;border-bottom:1px solid var(--border);}
+.itab{flex:1;padding:9px 4px;text-align:center;font-size:9px;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+  background:none;border-top:none;border-left:none;border-right:none;font-family:'IBM Plex Mono',monospace;}
+.itab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nk-screen{display:none;width:100%;padding:12px;max-width:520px;flex-direction:column;gap:12px;}
+.nk-screen.active{display:flex;}
+.neck-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--panel);
+  border:1px solid var(--border);border-radius:4px;padding:6px 0;}
+canvas{display:block;}
+.stats-row{display:flex;gap:8px;}
+.stat-box{flex:1;background:var(--panel);border:1px solid var(--border);padding:8px;text-align:center;border-radius:3px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);}
+.stat-lbl{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.nk-feedback{text-align:center;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  height:18px;color:var(--teal);}
+.nk-feedback.wrong{color:var(--wrong);}
+.nk-prompt{font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;text-align:center;}
+.score-streak{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;}
+.streak-dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+.streak-dot.hit{background:var(--teal);}.streak-dot.miss{background:var(--wrong);}
+.answer-grid-wrap{display:flex;flex-direction:column;gap:6px;}
+.answer-row-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:0 2px;}
+.answer-row{display:grid;gap:7px;}
+.answer-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:11px 4px;border-radius:3px;
+  cursor:pointer;transition:background .15s,border-color .15s;letter-spacing:1px;}
+.answer-btn:active{transform:scale(.96);}
+.answer-btn.correct{background:var(--teal);border-color:var(--teal);color:#000;}
+.answer-btn.wrong{background:var(--wrong);border-color:var(--wrong);color:#fff;}
+.nk-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  padding:9px 12px;cursor:pointer;border-radius:3px;transition:border-color .15s,color .15s;width:100%;}
+.nk-btn:hover{border-color:var(--accent);color:var(--accent);}
+.nk-btn.danger{border-color:var(--wrong);color:var(--wrong);}
+.nk-cfg-panel{display:none;flex-direction:column;gap:10px;}
+.nk-cfg-panel.open{display:flex;}
+.nk-config-section{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:12px;display:flex;flex-direction:column;gap:10px;}
+.nk-config-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  padding-bottom:6px;border-bottom:1px solid var(--dim);}
+.nk-cfg-row{display:flex;align-items:center;gap:10px;}
+.nk-cfg-row>label:first-child{font-size:11px;color:var(--text);flex:1;}
+.type-toggle{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.type-toggle button{flex:1;background:transparent;border:none;color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:9px;cursor:pointer;transition:background .15s,color .15s;border-right:1px solid var(--border);}
+.type-toggle button:last-child{border-right:none;}
+.type-toggle button.active{background:var(--accent);color:#000;}
+.range-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.range-row label{font-size:11px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
+.fret-input{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:14px;padding:7px 8px;border-radius:3px;
+  width:52px;text-align:center;}
+.fret-input:focus{outline:none;border-color:var(--accent);}
+.range-hint{font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px;line-height:1.5;}
+.key-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.key-row label{font-size:11px;color:var(--text);}
+.key-select{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;cursor:pointer;}
+.key-select:focus{outline:none;border-color:var(--accent);}
+.ref-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:10px 14px;text-align:center;display:flex;flex-direction:column;gap:5px;}
+.ref-card-label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.ref-note{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:28px;
+  color:var(--accent);letter-spacing:2px;min-height:36px;}
+.prog-wrap-nk{flex-direction:column;gap:5px;}
+.prog-header-nk{display:flex;justify-content:space-between;align-items:baseline;}
+.prog-label-nk{font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.prog-counter-nk{font-size:11px;color:var(--accent);}
+.prog-bar-track-nk{height:6px;background:var(--border);border-radius:3px;position:relative;overflow:hidden;}
+.prog-bar-miss-nk{position:absolute;top:0;right:50%;height:100%;background:var(--wrong);
+  border-radius:3px 0 0 3px;transition:width .25s ease;}
+.prog-bar-hit-nk{position:absolute;top:0;left:50%;height:100%;background:var(--teal);
+  border-radius:0 3px 3px 0;transition:width .25s ease;}
+.prog-bar-center-nk{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:2px;height:100%;background:rgba(232,228,218,0.25);}
+.prog-warning-nk{font-size:10px;letter-spacing:1px;text-transform:uppercase;text-align:center;
+  color:var(--wrong);height:16px;transition:opacity .2s;opacity:0;}
+.prog-warning-nk.show{opacity:1;}
+.fret-legend{display:flex;gap:12px;flex-wrap:wrap;padding:4px 2px;}
+.fret-pip{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);letter-spacing:1px;}
+.fret-pip-dot{width:10px;height:10px;border-radius:2px;}
+@keyframes gFlashUnlock{0%,100%{background:var(--panel)}50%{background:rgba(127,191,176,0.2)}}
+@keyframes gFlashLock{0%,100%{background:var(--panel)}50%{background:rgba(200,92,92,0.25)}}
+.flash-unlock-nk{animation:gFlashUnlock .55s ease;}
+.flash-lock-nk{animation:gFlashLock .55s ease;}
+
+/* Toast */
+.unlock-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
+  background:var(--panel);border:1px solid var(--accent);border-radius:4px;padding:20px 28px;
+  text-align:center;display:flex;flex-direction:column;gap:6px;pointer-events:none;
+  opacity:0;transition:opacity .2s,transform .2s;z-index:200;min-width:200px;}
+.unlock-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.unlock-toast-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:3px;}
+.unlock-toast-body{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<div class="app-nav">
+  <button class="app-tab active" onclick="switchApp('triads')">Missing Note</button>
+  <button class="app-tab" onclick="switchApp('diatonic')">Diatonic</button>
+  <button class="app-tab" onclick="switchApp('guitar')">Guitar</button>
+  <button class="app-tab" onclick="switchApp('steel')">Steel</button>
+</div>
+
+<!-- ══ APP 1: MISSING NOTE ══ -->
+<div class="app-screen active" id="app-triads">
+  <div class="t-header">
+    <div class="t-header-left">
+      <span class="t-h1">Triad Drill</span>
+      <span class="t-hsub" id="tr-hdr-sub">C Major · Root</span>
+    </div>
+    <div class="t-hstats">
+      <div style="text-align:center"><div class="t-hstat-val" id="tr-h-correct">0</div><div class="t-hstat-lbl">Correct</div></div>
+      <div style="text-align:center"><div class="t-hstat-val" id="tr-h-streak">0</div><div class="t-hstat-lbl">Streak</div></div>
+      <div style="text-align:center"><div class="t-hstat-val" id="tr-h-pct">—</div><div class="t-hstat-lbl">Acc</div></div>
+    </div>
+  </div>
+  <div class="t-main">
+    <div class="prog-section">
+      <div class="prog-top"><span class="prog-label" id="tr-prog-label">Unlock next</span><span class="prog-counter" id="tr-prog-counter">0 / 5</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" id="tr-prog-fill" style="width:0%"></div></div>
+      <div class="prog-warning" id="tr-prog-warn"></div>
+    </div>
+    <div class="timer-track"><div class="timer-fill" id="tr-timer-fill" style="width:100%;background:var(--teal);"></div></div>
+    <div class="triad-card">
+      <div class="card-meta"><span class="card-type-badge" id="tr-type-badge">Major</span><span class="card-inv-badge" id="tr-inv-badge">Root Position</span></div>
+      <div id="tr-chord-name-display" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:26px;letter-spacing:2px;color:var(--accent);line-height:1;display:none;"></div>
+      <div class="missing-label" id="tr-missing-label">Name the missing note</div>
+      <div class="bubbles-row" id="tr-bubbles-row"></div>
+      <div class="staff-wrap" id="tr-staff-wrap" style="display:none;"><svg class="staff" id="tr-staff-svg" width="210" height="100" viewBox="0 0 210 100"></svg></div>
+    </div>
+    <div class="feedback-line" id="tr-feedback"></div>
+    <div class="streak-row" id="tr-streak-row"></div>
+    <div class="answer-section">
+      <div class="answer-section-label">Name the missing note</div>
+      <div class="note-grid" id="tr-note-grid"></div>
+    </div>
+    <button class="t-btn" id="tr-cfg-btn" onclick="TR.toggleCfg()">Settings ▾</button>
+    <div class="cfg-panel" id="tr-cfg-panel">
+      <div class="config-section">
+        <div class="config-title">Triad Types</div>
+        <div class="type-grid">
+          <button class="type-btn on" data-t="major" onclick="TR.toggleType(this)">Major</button>
+          <button class="type-btn on" data-t="minor" onclick="TR.toggleType(this)">Minor</button>
+          <button class="type-btn on" data-t="dim" onclick="TR.toggleType(this)">Dim</button>
+          <button class="type-btn on" data-t="aug" onclick="TR.toggleType(this)">Aug</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Missing Note Position</div>
+        <div class="pos-grid">
+          <button class="pos-btn on" data-p="0" onclick="TR.togglePos(this)">Root</button>
+          <button class="pos-btn on" data-p="1" onclick="TR.togglePos(this)">3rd</button>
+          <button class="pos-btn on" data-p="2" onclick="TR.togglePos(this)">5th</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Inversions</div>
+        <div class="inv-grid">
+          <button class="inv-btn on" data-i="0" onclick="TR.toggleInv(this)">Root</button>
+          <button class="inv-btn" data-i="1" onclick="TR.toggleInv(this)">1st</button>
+          <button class="inv-btn" data-i="2" onclick="TR.toggleInv(this)">2nd</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Timer Speed</div>
+        <div class="speed-grid">
+          <button class="speed-btn" data-s="14" onclick="TR.setSpeed(this)">Slow</button>
+          <button class="speed-btn on" data-s="9" onclick="TR.setSpeed(this)">Normal</button>
+          <button class="speed-btn" data-s="5" onclick="TR.setSpeed(this)">Fast</button>
+          <button class="speed-btn" data-s="2.5" onclick="TR.setSpeed(this)">Brutal</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Display</div>
+        <div class="cfg-row"><label>Show chord name</label><label class="toggle"><input type="checkbox" id="tr-show-chordname" checked onchange="TR.redraw()"><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Show staff notation</label><label class="toggle"><input type="checkbox" id="tr-show-staff" onchange="TR.redraw()"><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Show interval labels</label><label class="toggle"><input type="checkbox" id="tr-show-intervals" checked onchange="TR.redraw()"><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Show scale degrees</label><label class="toggle"><input type="checkbox" id="tr-show-degrees" onchange="TR.redraw()"><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Reveal correct on wrong</label><label class="toggle"><input type="checkbox" id="tr-reveal-on-wrong" checked><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Progression</div>
+        <div class="cfg-row"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="tr-unlock-val">5</span></div>
+        <input type="range" min="3" max="12" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('tr-unlock-val').textContent=this.value;TR.UNLOCK_NEEDED=parseInt(this.value);TR.updateProgUI();">
+        <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="tr-drop-val">3</span></div>
+        <input type="range" min="1" max="6" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('tr-drop-val').textContent=this.value;TR.DROP_NEEDED=parseInt(this.value);TR.updateProgUI();">
+      </div>
+      <button class="t-btn danger" onclick="TR.resetAll()">Reset Progress</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP 2: DIATONIC ══ -->
+<div class="app-screen" id="app-diatonic">
+  <div class="t-header">
+    <div class="t-header-left">
+      <span class="t-h1">Diatonic</span>
+      <span class="t-hsub" id="d-hdr-sub">I · IV · V</span>
+    </div>
+    <div class="t-hstats">
+      <div style="text-align:center"><div class="t-hstat-val" id="d-h-correct">0</div><div class="t-hstat-lbl">Correct</div></div>
+      <div style="text-align:center"><div class="t-hstat-val" id="d-h-streak">0</div><div class="t-hstat-lbl">Streak</div></div>
+      <div style="text-align:center"><div class="t-hstat-val" id="d-h-pct">—</div><div class="t-hstat-lbl">Acc</div></div>
+    </div>
+  </div>
+  <div class="t-main">
+    <div class="prog-section">
+      <div class="prog-top"><span class="prog-label" id="d-prog-label">I · IV · V · unlock G</span><span class="prog-counter" id="d-prog-counter">0 / 5</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" id="d-prog-fill" style="width:0%"></div></div>
+      <div class="prog-warning" id="d-prog-warn"></div>
+    </div>
+    <div class="timer-track"><div class="timer-fill" id="d-timer-fill" style="width:100%;background:var(--teal);"></div></div>
+    <div class="key-prompt-card">
+      <div class="key-prompt-label">Key</div>
+      <div class="key-prompt-key" id="d-key">C</div>
+      <div class="key-prompt-degree" id="d-degree">What is the <strong>I</strong> chord?</div>
+      <div class="degree-chips" id="d-degree-chips"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <div class="quality-badge" id="d-quality-badge" style="display:none;"></div>
+        <div class="key-prompt-name" id="d-chord-name"></div>
+      </div>
+    </div>
+    <div class="feedback-line" id="d-feedback"></div>
+    <div class="streak-row" id="d-streak-row"></div>
+    <div class="answer-section">
+      <div class="answer-section-label">Name the root note of that chord</div>
+      <div class="note-grid" id="d-note-grid"></div>
+    </div>
+    <button class="t-btn" id="d-cfg-btn" onclick="DI.toggleCfg()">Settings ▾</button>
+    <div class="cfg-panel" id="d-cfg-panel">
+      <div class="config-section">
+        <div class="config-title">Hints</div>
+        <div class="cfg-row"><label>Show quality (Major / Minor / Dim)</label><label class="toggle"><input type="checkbox" id="d-show-quality" onchange="DI.redraw()"><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Show chord name after answer</label><label class="toggle"><input type="checkbox" id="d-show-name" checked><span class="toggle-slider"></span></label></div>
+        <div class="cfg-row"><label>Show degree chips</label><label class="toggle"><input type="checkbox" id="d-show-chips" checked onchange="DI.redraw()"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Timer Speed</div>
+        <div class="speed-grid">
+          <button class="speed-btn" data-s="14" onclick="DI.setSpeed(this)">Slow</button>
+          <button class="speed-btn on" data-s="9" onclick="DI.setSpeed(this)">Normal</button>
+          <button class="speed-btn" data-s="5" onclick="DI.setSpeed(this)">Fast</button>
+          <button class="speed-btn" data-s="2.5" onclick="DI.setSpeed(this)">Brutal</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Progression</div>
+        <div class="cfg-row"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="d-unlock-val">5</span></div>
+        <input type="range" min="3" max="12" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('d-unlock-val').textContent=this.value;DI.UNLOCK_NEEDED=parseInt(this.value);DI.updateProgUI();">
+        <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="d-drop-val">3</span></div>
+        <input type="range" min="1" max="6" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('d-drop-val').textContent=this.value;DI.DROP_NEEDED=parseInt(this.value);DI.updateProgUI();">
+      </div>
+      <button class="t-btn danger" onclick="DI.resetAll()">Reset Progress</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP 3: GUITAR NECK ══ -->
+<div class="app-screen" id="app-guitar">
+  <div class="neck-header">
+    <span class="neck-h1">Guitar Neck</span>
+    <span class="neck-hsub" id="g-header-mode">EADGBE · Note Names · C</span>
+  </div>
+  <div class="inner-tabs">
+    <button class="itab active" onclick="GN.switchTab('neck')">Neck</button>
+    <button class="itab" onclick="GN.switchTab('ref')">Ref</button>
+  </div>
+  <div class="nk-screen active" id="g-screen-neck">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="g-correct">0</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat-box"><div class="stat-val" id="g-streak">0</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat-box"><div class="stat-val" id="g-pct">—</div><div class="stat-lbl">Accuracy</div></div>
+    </div>
+    <div class="score-streak" id="g-streak-dots"></div>
+    <div class="prog-wrap-nk" id="g-prog-wrap" style="display:none;">
+      <div class="prog-header-nk"><span class="prog-label-nk" id="g-prog-label">Frets 0–0</span><span class="prog-counter-nk" id="g-prog-counter">0 / 12</span></div>
+      <div class="prog-bar-track-nk">
+        <div class="prog-bar-miss-nk" id="g-prog-bar-miss" style="width:0%;"></div>
+        <div class="prog-bar-hit-nk" id="g-prog-bar-hit" style="width:0%;"></div>
+        <div class="prog-bar-center-nk"></div>
+      </div>
+      <div class="prog-warning-nk" id="g-prog-warning"></div>
+    </div>
+    <div class="nk-prompt" id="g-neck-prompt">What note is highlighted?</div>
+    <div class="neck-wrap" id="g-neck-wrap"><canvas id="g-neck-canvas"></canvas></div>
+    <div class="nk-feedback" id="g-neck-feedback"></div>
+    <div class="answer-grid-wrap"><div id="g-neck-answer-grid"></div></div>
+    <button class="nk-btn" id="g-cfg-toggle" onclick="GN.toggleCfg()">Settings ▾</button>
+    <div class="nk-cfg-panel" id="g-cfg-panel">
+      <div class="nk-config-section">
+        <div class="nk-config-title">Key</div>
+        <div class="key-row"><label>Root</label>
+          <select class="key-select" id="g-cfg-key" onchange="GN.onKeyChange()">
+            <option>C</option><option>G</option><option>D</option><option>A</option>
+            <option>E</option><option>B</option><option>F#</option>
+            <option>F</option><option>Bb</option><option>Eb</option><option>Ab</option><option>Db</option>
+          </select>
+        </div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Display Mode</div>
+        <div class="type-toggle" id="g-display-mode-toggle">
+          <button class="active" onclick="GN.setDisplayMode('notes')">Notes</button>
+          <button onclick="GN.setDisplayMode('numbers')">Nashville</button>
+          <button onclick="GN.setDisplayMode('both')">Both</button>
+        </div>
+      </div>
+      <div class="nk-config-section" id="g-manual-range-section">
+        <div class="nk-config-title">Fret Range</div>
+        <div class="range-row">
+          <label>From</label>
+          <input class="fret-input" type="number" id="g-fret-min" value="0" min="0" max="12" onchange="GN.onRangeChange()">
+          <span style="color:var(--muted);font-size:14px;">—</span>
+          <input class="fret-input" type="number" id="g-fret-max" value="12" min="0" max="12" onchange="GN.onRangeChange()">
+          <label>to</label>
+        </div>
+        <div class="range-hint">Disabled when Progression Mode is on.</div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Progression Mode</div>
+        <div class="nk-cfg-row"><label>Earn frets — timer drains on hesitation</label><label class="toggle"><input type="checkbox" id="g-cfg-prog" onchange="GN.onProgModeChange()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row" style="margin-top:10px;"><label>Base fret</label><input class="fret-input" type="number" id="g-cfg-base-fret" value="0" min="0" max="12" onchange="GN.onBaseFretChange()"></div>
+        <div class="range-hint">Starts at base fret. Unlocks alternate outward.</div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Spaced Repetition</div>
+        <div class="type-toggle" id="g-sr-mode-toggle">
+          <button onclick="GN.setSRMode('intro')">Intro</button>
+          <button class="active" onclick="GN.setSRMode('standard')">Standard</button>
+          <button onclick="GN.setSRMode('deep')">Deep</button>
+        </div>
+        <div class="range-hint" id="g-sr-hint">Standard: neutral weighting, 3-exposure floor.</div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Options</div>
+        <div class="nk-cfg-row"><label>Multiple choice</label><label class="toggle"><input type="checkbox" id="g-cfg-mc" checked onchange="GN.buildQuestion()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Play tone on new note</label><label class="toggle"><input type="checkbox" id="g-cfg-tone" checked><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Show intervals on neck</label><label class="toggle"><input type="checkbox" id="g-cfg-intervals" onchange="GN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Highlight key tones</label><label class="toggle"><input type="checkbox" id="g-cfg-keytones" onchange="GN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Drill key tones only</label><label class="toggle"><input type="checkbox" id="g-cfg-keyonly" onchange="GN.onKeyOnlyChange()"><span class="toggle-slider"></span></label></div>
+      </div>
+      <button class="nk-btn danger" onclick="GN.resetAll()">Reset Stats</button>
+    </div>
+  </div>
+  <div class="nk-screen" id="g-screen-ref">
+    <div class="neck-wrap"><canvas id="g-ref-canvas"></canvas></div>
+    <div class="ref-card">
+      <div class="ref-card-label" id="g-ref-label">Tap any position</div>
+      <div class="ref-note" id="g-ref-note"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP 4: STEEL NECK (Neck + Ref only) ══ -->
+<div class="app-screen" id="app-steel">
+  <div class="neck-header">
+    <span class="neck-h1">Steel Neck</span>
+    <span class="neck-hsub" id="s-header-mode">E9 · Note Names</span>
+  </div>
+  <div class="inner-tabs">
+    <button class="itab active" onclick="SN.switchTab('neck')">Neck</button>
+    <button class="itab" onclick="SN.switchTab('ref')">Ref</button>
+  </div>
+  <div class="nk-screen active" id="s-screen-neck">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="s-correct">0</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-pct">—</div><div class="stat-lbl">Accuracy</div></div>
+    </div>
+    <div class="score-streak" id="s-streak-dots"></div>
+    <div class="nk-prompt" id="s-neck-prompt">What note is highlighted?</div>
+    <div class="neck-wrap"><canvas id="s-neck-canvas"></canvas></div>
+    <div class="nk-feedback" id="s-neck-feedback"></div>
+    <div class="answer-grid-wrap"><div id="s-neck-answer-grid"></div></div>
+    <button class="nk-btn" id="s-cfg-toggle" onclick="SN.toggleCfg()">Settings ▾</button>
+    <div class="nk-cfg-panel" id="s-cfg-panel">
+      <div class="nk-config-section">
+        <div class="nk-config-title">Display Mode</div>
+        <div class="type-toggle" id="s-display-mode-toggle">
+          <button class="active" onclick="SN.setDisplayMode('notes')">Notes</button>
+          <button onclick="SN.setDisplayMode('numbers')">Numbers</button>
+          <button onclick="SN.setDisplayMode('both')">Both</button>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="nk-cfg-row"><label>Key (root)</label>
+            <select class="key-select" id="s-cfg-key" onchange="SN.onKeyChange()">
+              <option>G</option><option>D</option><option>A</option><option selected>E</option>
+              <option>B</option><option>F#</option><option>C#</option>
+              <option>C</option><option>F</option><option>Bb</option><option>Eb</option><option>Ab</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Fret Range</div>
+        <div class="range-row">
+          <label>From</label>
+          <input class="fret-input" type="number" id="s-fret-min" value="0" min="0" max="12" onchange="SN.onRangeChange()">
+          <span style="color:var(--muted);font-size:14px;">—</span>
+          <input class="fret-input" type="number" id="s-fret-max" value="12" min="0" max="12" onchange="SN.onRangeChange()">
+          <label>to</label>
+        </div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Spaced Repetition</div>
+        <div class="type-toggle" id="s-sr-mode-toggle">
+          <button onclick="SN.setSRMode('intro')">Intro</button>
+          <button class="active" onclick="SN.setSRMode('standard')">Standard</button>
+          <button onclick="SN.setSRMode('deep')">Deep</button>
+        </div>
+        <div class="range-hint" id="s-sr-hint">Standard: neutral weighting, 3-exposure floor.</div>
+      </div>
+      <div class="nk-config-section">
+        <div class="nk-config-title">Options</div>
+        <div class="nk-cfg-row"><label>Multiple choice</label><label class="toggle"><input type="checkbox" id="s-cfg-mc" checked onchange="SN.newCard()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Play tone</label><label class="toggle"><input type="checkbox" id="s-cfg-tone" checked><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Show intervals</label><label class="toggle"><input type="checkbox" id="s-cfg-intervals" onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Highlight key tones</label><label class="toggle"><input type="checkbox" id="s-cfg-keytones" onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Drill key tones only</label><label class="toggle"><input type="checkbox" id="s-cfg-keyonly" onchange="SN.onKeyOnlyChange()"><span class="toggle-slider"></span></label></div>
+      </div>
+      <button class="nk-btn danger" onclick="SN.resetAll()">Reset Stats</button>
+    </div>
+  </div>
+  <div class="nk-screen" id="s-screen-ref">
+    <div class="fret-legend">
+      <div class="fret-pip"><div class="fret-pip-dot" style="background:#d4b800"></div>Fret 3</div>
+      <div class="fret-pip"><div class="fret-pip-dot" style="background:#c84040"></div>Fret 5</div>
+      <div class="fret-pip"><div class="fret-pip-dot" style="background:#4466cc"></div>Fret 7</div>
+      <div class="fret-pip"><div class="fret-pip-dot" style="background:#2a9d8f"></div>Fret 9</div>
+    </div>
+    <div class="neck-wrap"><canvas id="s-ref-canvas"></canvas></div>
+    <div class="ref-card">
+      <div class="ref-card-label" id="s-ref-label">Tap any position</div>
+      <div class="ref-note" id="s-ref-note"></div>
+    </div>
+  </div>
+</div>
+
+<div class="unlock-toast" id="unlock-toast">
+  <div class="unlock-toast-title" id="toast-title">Unlocked!</div>
+  <div class="unlock-toast-body" id="toast-body"></div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SHARED UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+const ALL_NOTES   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const TO_FLAT     = {'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
+const TO_SHARP    = {'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+const FLAT_ROOTS  = new Set(['F','Bb','Eb','Ab','Db','A#','D#','G#']);
+const MAJOR_STEPS = [0,2,4,5,7,9,11];
+function nIdx(n){ return ALL_NOTES.indexOf(TO_SHARP[n]||n); }
+function nd(note,rootCtx){
+  const rs=TO_SHARP[rootCtx||note]||(rootCtx||note);
+  return(FLAT_ROOTS.has(rs)||FLAT_ROOTS.has(rootCtx||note))?(TO_FLAT[note]||note):note;
+}
+
+// Shared AudioContext
+let _AC=null;
+function getAC(){ if(!_AC) _AC=new(window.AudioContext||window.webkitAudioContext)(); return _AC; }
+
+// Karplus-Strong plucked string — sounds like an actual guitar/steel string
+function playKS(hz, vol=0.5, decay=0.98){
+  const ctx=getAC(), sr=ctx.sampleRate;
+  const period=Math.round(sr/hz);
+  const buf=new Float32Array(period);
+  for(let i=0;i<period;i++) buf[i]=Math.random()*2-1;
+  const ab=ctx.createBuffer(1,Math.floor(sr*1.8),sr);
+  const data=ab.getChannelData(0);
+  const ks=[...buf];
+  for(let i=0;i<data.length;i++){
+    const idx=i%period;
+    data[i]=ks[idx]*0.5;
+    ks[idx]=(ks[idx]+ks[(idx+1)%period])*0.5*decay;
+  }
+  const src=ctx.createBufferSource();
+  src.buffer=ab;
+  const gain=ctx.createGain();
+  gain.gain.value=vol;
+  src.connect(gain); gain.connect(ctx.destination);
+  src.start(ctx.currentTime);
+}
+
+function midiToHz(m){ return 440*Math.pow(2,(m-69)/12); }
+
+// Toast
+let _toastT=null;
+function showToast(title,body){
+  const t=document.getElementById('unlock-toast');
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-body').textContent=body;
+  t.classList.add('show');
+  if(_toastT) clearTimeout(_toastT);
+  _toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// App switcher
+let _currentApp='triads';
+function switchApp(name){
+  _currentApp=name;
+  document.querySelectorAll('.app-tab').forEach((b,i)=>
+    b.classList.toggle('active',['triads','diatonic','guitar','steel'][i]===name));
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('app-'+name).classList.add('active');
+  if(name==='triads'){ TR.stopTimer(); if(!TR.answered) TR.startTimer(); DI.stopTimer(); }
+  else if(name==='diatonic'){ TR.stopTimer(); DI.stopTimer(); if(!DI.answered) DI.startTimer(); }
+  else{ TR.stopTimer(); DI.stopTimer(); }
+  if(name==='guitar') setTimeout(()=>GN.redrawCurrent(),50);
+  if(name==='steel')  setTimeout(()=>SN.redrawCurrent(),50);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRIAD GAME — TR
+// ══════════════════════════════════════════════════════════════════════════════
+const TR=(()=>{
+  const IVLS={major:[0,4,7],minor:[0,3,7],dim:[0,3,6],aug:[0,4,8]};
+  const TNAMES={major:'Major',minor:'Minor',dim:'Diminished',aug:'Augmented'};
+  const ILBLS={major:['Root','Major 3rd','Perfect 5th'],minor:['Root','Minor 3rd','Perfect 5th'],dim:['Root','Minor 3rd','Dim. 5th'],aug:['Root','Major 3rd','Aug. 5th']};
+  const DEGS=['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+  const INVN=['Root Position','1st Inversion','2nd Inversion'];
+  const LETTERS=['C','D','E','F','G','A','B'];
+
+  function respell(notes,root){const rs=TO_SHARP[root]||root;const uf=FLAT_ROOTS.has(rs)||FLAT_ROOTS.has(root);return notes.map(n=>uf?(TO_FLAT[n]||n):n);}
+  function buildTriad(root,type,inv){const rs=TO_SHARP[root]||root;const ri=ALL_NOTES.indexOf(rs);const base=IVLS[type].map(i=>ALL_NOTES[(ri+i)%12]);const rot=[...base];for(let i=0;i<inv;i++)rot.push(rot.shift());return respell(rot,rs);}
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+  function genPool(){const roots=['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db'];const phases=[{type:'major',inv:0},{type:'minor',inv:0},{type:'dim',inv:0},{type:'aug',inv:0},{type:'major',inv:1},{type:'minor',inv:1},{type:'major',inv:2},{type:'minor',inv:2},{type:'dim',inv:1},{type:'aug',inv:1},{type:'dim',inv:2},{type:'aug',inv:2}];const o=[];for(const p of phases)for(const r of shuffle([...roots]))o.push({root:r,...p});return o;}
+  const MASTER=genPool();
+
+  let UNLOCK_NEEDED=5,DROP_NEEDED=3,TIMER_S=9;
+  let unlocked=1,progHits=0,progMisses=0;
+  let aTypes=new Set(['major','minor','dim','aug']),aPos=new Set([0,1,2]),aInv=new Set([0]);
+  let correct=0,total=0,dots=[],q=null,answered=false,tFrac=1,tRAF=null,tLast=null;
+
+  function getPool(){const seen=new Set(),pool=[];for(let i=0;i<Math.min(unlocked,MASTER.length);i++){const e=MASTER[i];if(!aTypes.has(e.type))continue;const inv=aInv.has(e.inv)?e.inv:0;const k=e.root+'|'+e.type+'|'+inv;if(seen.has(k))continue;seen.add(k);pool.push({...e,inv});}return pool.length?pool:[MASTER[0]];}
+  function pick(){const pool=getPool();const p=pool[Math.floor(Math.random()*pool.length)];const notes=buildTriad(p.root,p.type,p.inv);const pos=[...aPos];const mp=pos[Math.floor(Math.random()*pos.length)];return{...p,notes,missingPos:mp,correctNote:notes[mp]};}
+
+  function startTimer(){stopTimer();tLast=performance.now();(function tick(now){if(answered){tRAF=null;return;}const dt=(now-tLast)/1000;tLast=now;tFrac=Math.max(0,tFrac-dt/TIMER_S);renderTimer();if(tFrac<=0){tRAF=null;onTimeout();}else tRAF=requestAnimationFrame(tick);})(performance.now());}
+  function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
+  function renderTimer(){const el=document.getElementById('tr-timer-fill');el.style.width=(tFrac*100)+'%';el.style.background=tFrac>0.5?'var(--teal)':tFrac>0.25?'var(--accent)':'var(--wrong)';}
+  function onTimeout(){if(answered)return;answered=true;total++;dots.push(false);onMiss();setFb('Time — '+nd(q.correctNote,q.root),'timeout');reveal();updateStats();setTimeout(next,1500);}
+
+  function onHit(){progMisses=0;tFrac=Math.min(1,tFrac+0.35);progHits++;if(progHits>=UNLOCK_NEEDED){progHits=0;doUnlock();}updateProgUI();}
+  function onMiss(){progHits=0;progMisses++;if(progMisses>=DROP_NEEDED){progMisses=0;dropBack();}updateProgUI();}
+  function doUnlock(){if(unlocked>=MASTER.length)return;unlocked++;const e=MASTER[unlocked-1];showToast('Unlocked',nd(e.root)+' '+TNAMES[e.type]+(e.inv>0?' · '+INVN[e.inv]:''));document.body.classList.remove('flash-unlock','flash-lock');void document.body.offsetWidth;document.body.classList.add('flash-unlock');}
+  function dropBack(){if(unlocked>1){unlocked--;document.body.classList.remove('flash-unlock','flash-lock');void document.body.offsetWidth;document.body.classList.add('flash-lock');}}
+  function updateProgUI(){const atMax=unlocked>=MASTER.length;const next=MASTER[Math.min(unlocked,MASTER.length-1)];document.getElementById('tr-prog-label').textContent=atMax?'All unlocked!':'Unlock: '+nd(next.root)+' '+TNAMES[next.type]+(next.inv>0?' · '+INVN[next.inv]:'');document.getElementById('tr-prog-counter').textContent=atMax?'✓':progHits+' / '+UNLOCK_NEEDED;document.getElementById('tr-prog-fill').style.width=atMax?'100%':(progHits/UNLOCK_NEEDED*100)+'%';const w=document.getElementById('tr-prog-warn');if(progMisses===DROP_NEEDED-1&&unlocked>1){const p=MASTER[unlocked-2];w.textContent='⚠ One more miss — drops to '+nd(p.root)+' '+TNAMES[p.type];w.classList.add('show');}else{w.textContent='';w.classList.remove('show');}}
+
+  function drawQ(cq,revealMissing){document.getElementById('tr-type-badge').textContent=TNAMES[cq.type];document.getElementById('tr-inv-badge').textContent=INVN[cq.inv];document.getElementById('tr-missing-label').textContent=revealMissing?'Answer revealed':'Name the missing note';const cn=document.getElementById('tr-chord-name-display');if(document.getElementById('tr-show-chordname').checked){cn.innerHTML=nd(cq.root,cq.root)+' '+TNAMES[cq.type];cn.style.display='block';}else cn.style.display='none';const showI=document.getElementById('tr-show-intervals').checked;const showD=document.getElementById('tr-show-degrees').checked;const row=document.getElementById('tr-bubbles-row');row.innerHTML='';const ri=nIdx(cq.root);const rootNotes=buildTriad(cq.root,cq.type,0);cq.notes.forEach((note,i)=>{const isMissing=i===cq.missingPos;const div=document.createElement('div');div.className='note-bubble'+(isMissing?' is-missing':'');if(isMissing&&!revealMissing){if(showI){const rp=rootNotes.findIndex(n=>nIdx(n)===nIdx(cq.correctNote));const iv=document.createElement('div');iv.className='bubble-interval';iv.textContent=rp>=0?ILBLS[cq.type][rp]:'—';div.appendChild(iv);}}else{if(isMissing)div.classList.remove('is-missing');const ne=document.createElement('div');ne.className='bubble-note';ne.textContent=nd(note,cq.root);div.appendChild(ne);if(showI){const rp=rootNotes.findIndex(n=>nIdx(n)===nIdx(note));const iv=document.createElement('div');iv.className='bubble-interval';iv.textContent=rp>=0?ILBLS[cq.type][rp]:'—';div.appendChild(iv);}if(showD){const se=(nIdx(note)-ri+12)%12;const de=document.createElement('div');de.className='bubble-degree';de.textContent=DEGS[se];div.appendChild(de);}}row.appendChild(div);});const sw=document.getElementById('tr-staff-wrap');if(document.getElementById('tr-show-staff').checked){sw.style.display='flex';drawStaff(cq.notes,cq.missingPos,revealMissing);}else sw.style.display='none';document.getElementById('tr-hdr-sub').textContent=nd(cq.root)+' '+TNAMES[cq.type]+' · '+INVN[cq.inv];}
+  function reveal(){const row=document.getElementById('tr-bubbles-row');const b=row.children[q.missingPos];if(b){b.classList.remove('is-missing');b.innerHTML='';const ne=document.createElement('div');ne.className='bubble-note';ne.textContent=nd(q.correctNote,q.root);b.appendChild(ne);if(document.getElementById('tr-show-intervals').checked){const rn=buildTriad(q.root,q.type,0);const rp=rn.findIndex(n=>nIdx(n)===nIdx(q.correctNote));const iv=document.createElement('div');iv.className='bubble-interval';iv.textContent=rp>=0?ILBLS[q.type][rp]:'—';b.appendChild(iv);}}if(document.getElementById('tr-show-staff').checked)drawStaff(q.notes,q.missingPos,true);}
+
+  function drawStaff(notes,missingPos,revealed){const svg=document.getElementById('tr-staff-svg');const W=210,H=100,ls=9,st=18;function sy(s){return st+(10-s)*(ls/2);}function ns(n){return LETTERS.indexOf(n[0].toUpperCase());}let slots=notes.map(ns);for(let i=1;i<slots.length;i++)while(slots[i]<=slots[i-1])slots[i]+=7;const mn=Math.min(...slots);if(mn<0)slots=slots.map(s=>s+7);const mx=Math.max(...slots);if(mx>11)slots=slots.map(s=>s-7);let h='';for(let i=0;i<5;i++){const y=st+i*ls;h+=`<line x1="32" y1="${y}" x2="${W-8}" y2="${y}" stroke="rgba(232,228,218,0.25)" stroke-width="1"/>"`;}h+=`<text x="29" y="${st+30}" font-size="48" fill="rgba(200,168,75,0.6)" font-family="serif" text-anchor="middle">𝄞</text>`;const nx=[85,120,155];for(let i=0;i<slots.length;i++){const sl=slots[i];const y=sy(sl);const x=nx[i];const im=i===missingPos;const ih=im&&!revealed;const dn=nd(notes[i]);if(sl<=1)h+=`<line x1="${x-13}" y1="${sy(2)-ls}" x2="${x+13}" y2="${sy(2)-ls}" stroke="rgba(232,228,218,0.3)" stroke-width="1"/>`;const col=ih?'rgba(200,168,75,0.2)':(im?'var(--teal)':'var(--accent)');h+=`<ellipse cx="${x}" cy="${y}" rx="6.5" ry="5" fill="${col}" transform="rotate(-15,${x},${y})"/>`;if(!ih){h+=`<line x1="${x+6}" y1="${y}" x2="${x+6}" y2="${y-26}" stroke="${col}" stroke-width="1.5"/>`;if(dn.includes('#'))h+=`<text x="${x-15}" y="${y+4}" font-size="13" fill="${col}" font-family="serif">#</text>`;if(dn.endsWith('b'))h+=`<text x="${x-13}" y="${y+5}" font-size="14" fill="${col}" font-family="serif">♭</text>`;}else h+=`<text x="${x}" y="${y+4}" font-size="12" fill="rgba(200,168,75,0.4)" font-family="IBM Plex Mono,monospace" text-anchor="middle">?</text>`;h+=`<text x="${x}" y="${H-3}" font-size="8" fill="${ih?'rgba(200,168,75,0.2)':'rgba(127,191,176,0.7)'}" font-family="IBM Plex Mono,monospace" text-anchor="middle">${ih?'?':dn}</text>`;}svg.innerHTML=h;}
+
+  function buildGrid(useFlats){const grid=document.getElementById('tr-note-grid');grid.innerHTML='';const nat=['C','D','E','F','G','A','B'];const acc=useFlats?['Db','Eb','Gb','Ab','Bb']:['C#','D#','F#','G#','A#'];[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
+  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');reveal();updateStats();setTimeout(next,750);}else{dots.push(false);btn.classList.add('wrong');onMiss();if(document.getElementById('tr-reveal-on-wrong').checked){document.querySelectorAll('#tr-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});reveal();}setFb('Wrong — '+nd(q.correctNote,q.root),'wrong');updateStats();setTimeout(next,1400);}}
+
+  function next(){answered=false;setFb('','');q=pick();const rs=TO_SHARP[q.root]||q.root;buildGrid(FLAT_ROOTS.has(rs)||FLAT_ROOTS.has(q.root));tFrac=1;renderTimer();drawQ(q,false);startTimer();}
+  function updateStats(){document.getElementById('tr-h-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('tr-h-streak').textContent=s;document.getElementById('tr-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('tr-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');}
+  function setFb(msg,cls){const el=document.getElementById('tr-feedback');el.textContent=msg;el.className='feedback-line'+(cls?' '+cls:'');}
+  function toggleCfg(){const p=document.getElementById('tr-cfg-panel');const b=document.getElementById('tr-cfg-btn');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';if(o)stopTimer();else if(!answered)startTimer();}
+  function toggleType(btn){const t=btn.dataset.t;if(aTypes.has(t)){if(aTypes.size>1){aTypes.delete(t);btn.classList.remove('on');}}else{aTypes.add(t);btn.classList.add('on');}}
+  function togglePos(btn){const p=parseInt(btn.dataset.p);if(aPos.has(p)){if(aPos.size>1){aPos.delete(p);btn.classList.remove('on');}}else{aPos.add(p);btn.classList.add('on');}}
+  function toggleInv(btn){const i=parseInt(btn.dataset.i);if(aInv.has(i)){if(aInv.size>1){aInv.delete(i);btn.classList.remove('on');}}else{aInv.add(i);btn.classList.add('on');}}
+  function setSpeed(btn){document.querySelectorAll('#tr-cfg-panel .speed-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');TIMER_S=parseFloat(btn.dataset.s);}
+  function redraw(){if(q)drawQ(q,answered);}
+  function resetAll(){correct=0;total=0;dots=[];unlocked=1;progHits=0;progMisses=0;updateStats();updateProgUI();next();}
+
+  return{startTimer,stopTimer,toggleCfg,toggleType,togglePos,toggleInv,setSpeed,redraw,resetAll,
+    get answered(){return answered;},
+    get UNLOCK_NEEDED(){return UNLOCK_NEEDED;},set UNLOCK_NEEDED(v){UNLOCK_NEEDED=v;},
+    get DROP_NEEDED(){return DROP_NEEDED;},set DROP_NEEDED(v){DROP_NEEDED=v;},
+    updateProgUI,init(){updateProgUI();updateStats();next();}};
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DIATONIC — DI
+// ══════════════════════════════════════════════════════════════════════════════
+const DI=(()=>{
+  const DIAT=[{roman:'I',semi:0,quality:'major'},{roman:'ii',semi:2,quality:'minor'},{roman:'iii',semi:4,quality:'minor'},{roman:'IV',semi:5,quality:'major'},{roman:'V',semi:7,quality:'major'},{roman:'vi',semi:9,quality:'minor'},{roman:'vii°',semi:11,quality:'dim'}];
+  const D_KEYS=['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db'];
+  const D_TIERS=[{label:'I · IV · V',degrees:[0,3,4]},{label:'I · ii · IV · V · vi',degrees:[0,1,3,4,5]},{label:'I · ii · iii · IV · V · vi',degrees:[0,1,2,3,4,5]},{label:'Full diatonic',degrees:[0,1,2,3,4,5,6]}];
+
+  let UNLOCK_NEEDED=5,DROP_NEEDED=3,TIMER_S=9;
+  let tier=0,unlockedKeys=1,hits=0,misses=0;
+  let correct=0,total=0,dots=[],q=null,answered=false,tFrac=1,tRAF=null,tLast=null;
+
+  function getRoot(key,di){const ki=nIdx(key);const sharp=ALL_NOTES[(ki+DIAT[di].semi)%12];const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);return uf?(TO_FLAT[sharp]||sharp):sharp;}
+  function pick(){const keys=D_KEYS.slice(0,unlockedKeys);const degs=D_TIERS[tier].degrees;const key=keys[Math.floor(Math.random()*keys.length)];const di=degs[Math.floor(Math.random()*degs.length)];const root=getRoot(key,di);return{key,di,degree:DIAT[di],root,correctNote:root};}
+
+  function startTimer(){stopTimer();tLast=performance.now();(function tick(now){if(answered){tRAF=null;return;}const dt=(now-tLast)/1000;tLast=now;tFrac=Math.max(0,tFrac-dt/TIMER_S);renderTimer();if(tFrac<=0){tRAF=null;onTimeout();}else tRAF=requestAnimationFrame(tick);})(performance.now());}
+  function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
+  function renderTimer(){const el=document.getElementById('d-timer-fill');el.style.width=(tFrac*100)+'%';el.style.background=tFrac>0.5?'var(--teal)':tFrac>0.25?'var(--accent)':'var(--wrong)';}
+  function onTimeout(){if(answered)return;answered=true;total++;dots.push(false);onMiss();setFb('Time — '+q.correctNote,'timeout');revealQ();updateStats();setTimeout(next,1500);}
+
+  function onHit(){misses=0;tFrac=Math.min(1,tFrac+0.35);hits++;if(hits>=UNLOCK_NEEDED){hits=0;advance();}updateProgUI();}
+  function onMiss(){hits=0;misses++;if(misses>=DROP_NEEDED){misses=0;if(unlockedKeys>1){unlockedKeys--;document.body.classList.remove('flash-unlock','flash-lock');void document.body.offsetWidth;document.body.classList.add('flash-lock');}}updateProgUI();}
+  function advance(){if(unlockedKeys<D_KEYS.length){unlockedKeys++;showToast('New key!',D_KEYS[unlockedKeys-1]+' · '+D_TIERS[tier].label);document.body.classList.remove('flash-unlock','flash-lock');void document.body.offsetWidth;document.body.classList.add('flash-unlock');}else if(tier<D_TIERS.length-1){tier++;unlockedKeys=1;showToast('Tier unlocked!',D_TIERS[tier].label);document.body.classList.remove('flash-unlock','flash-lock');void document.body.offsetWidth;document.body.classList.add('flash-unlock');}updateProgUI();}
+  function updateProgUI(){const atMax=unlockedKeys>=D_KEYS.length&&tier>=D_TIERS.length-1;const tl=D_TIERS[tier].label;let lbl=atMax?'All degrees mastered!':unlockedKeys>=D_KEYS.length?tl+' — unlock next tier':tl+' · unlock '+D_KEYS[unlockedKeys];document.getElementById('d-prog-label').textContent=lbl;document.getElementById('d-prog-counter').textContent=atMax?'✓':hits+' / '+UNLOCK_NEEDED;document.getElementById('d-prog-fill').style.width=atMax?'100%':(hits/UNLOCK_NEEDED*100)+'%';document.getElementById('d-hdr-sub').textContent=D_TIERS[tier].label;const w=document.getElementById('d-prog-warn');if(misses===DROP_NEEDED-1&&unlockedKeys>1){w.textContent='⚠ One more miss drops '+D_KEYS[unlockedKeys-1]+' from pool';w.classList.add('show');}else{w.textContent='';w.classList.remove('show');}}
+
+  function drawQ(cq,revealed){const showQ=document.getElementById('d-show-quality').checked;const showC=document.getElementById('d-show-chips').checked;const showN=document.getElementById('d-show-name').checked;document.getElementById('d-key').textContent=nd(cq.key,cq.key);document.getElementById('d-degree').innerHTML='What is the <strong>'+cq.degree.roman+'</strong> chord?';const qb=document.getElementById('d-quality-badge');if(showQ){qb.textContent=cq.degree.quality.charAt(0).toUpperCase()+cq.degree.quality.slice(1);qb.className='quality-badge '+cq.degree.quality;qb.style.display='inline-block';}else qb.style.display='none';const cn=document.getElementById('d-chord-name');if(revealed&&showN){const qs={major:'',minor:'m',dim:'°'};cn.textContent=cq.correctNote+(qs[cq.degree.quality]||'');}else cn.textContent='';const ch=document.getElementById('d-degree-chips');if(showC){ch.style.display='flex';ch.innerHTML=D_TIERS[tier].degrees.map(i=>{const d=DIAT[i];return`<span class="degree-chip ${i===cq.di?'current':'unlocked'}">${d.roman}</span>`;}).join('');}else ch.style.display='none';}
+  function revealQ(){drawQ(q,true);document.querySelectorAll('#d-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});}
+
+  function buildGrid(key){const grid=document.getElementById('d-note-grid');grid.innerHTML='';const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);const nat=['C','D','E','F','G','A','B'];const acc=uf?['Db','Eb','Gb','Ab','Bb']:['C#','D#','F#','G#','A#'];[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
+  function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');revealQ();updateStats();setTimeout(next,800);}else{dots.push(false);btn.classList.add('wrong');onMiss();revealQ();setFb('Wrong — '+q.correctNote,'wrong');updateStats();setTimeout(next,1400);}}
+
+  function next(){answered=false;setFb('','');q=pick();tFrac=1;renderTimer();buildGrid(q.key);drawQ(q,false);startTimer();}
+  function updateStats(){document.getElementById('d-h-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('d-h-streak').textContent=s;document.getElementById('d-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('d-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');}
+  function setFb(msg,cls){const el=document.getElementById('d-feedback');el.textContent=msg;el.className='feedback-line'+(cls?' '+cls:'');}
+  function toggleCfg(){const p=document.getElementById('d-cfg-panel');const b=document.getElementById('d-cfg-btn');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';if(o)stopTimer();else if(!answered)startTimer();}
+  function redraw(){if(q)drawQ(q,answered);}
+  function setSpeed(btn){document.querySelectorAll('#d-cfg-panel .speed-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');TIMER_S=parseFloat(btn.dataset.s);}
+  function resetAll(){correct=0;total=0;dots=[];tier=0;unlockedKeys=1;hits=0;misses=0;updateProgUI();updateStats();next();}
+
+  return{startTimer,stopTimer,toggleCfg,setSpeed,redraw,resetAll,
+    get answered(){return answered;},
+    get UNLOCK_NEEDED(){return UNLOCK_NEEDED;},set UNLOCK_NEEDED(v){UNLOCK_NEEDED=v;},
+    get DROP_NEEDED(){return DROP_NEEDED;},set DROP_NEEDED(v){DROP_NEEDED=v;},
+    updateProgUI,init(){updateProgUI();updateStats();q=pick();buildGrid(q.key);drawQ(q,false);}};
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GUITAR NECK — GN  (source: document index 1, audio replaced with KS)
+// ══════════════════════════════════════════════════════════════════════════════
+const GN=(()=>{
+  // Standard tuning: E2 A2 D3 G3 B3 E4
+  // String 0 = low E (S1), String 5 = high e (S6)
+  // Canvas: row for string s = TOP_PAD+(5-s)*ROW_H  →  s=0 at bottom, s=5 at top
+  const OPEN_MIDI  = [40,45,50,55,59,64]; // E2 A2 D3 G3 B3 E4
+  const OPEN_NOTES = ['E','A','D','G','B','E'];
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const DEG_NAMES  = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+  const STRING_LABELS=['S1','S2','S3','S4','S5','S6'];
+  const LEFT_PAD=34,TOP_PAD=22,BTM_PAD=18,ROW_H=28;
+
+  function noteAt(s,f){return NOTE_NAMES[(NOTE_NAMES.indexOf(OPEN_NOTES[s])+f)%12];}
+  // KS plucked string synthesis — far more recognizable than sine
+  function playNote(s,f){
+    if(!document.getElementById('g-cfg-tone').checked) return;
+    playKS(midiToHz(OPEN_MIDI[s]+f), 0.55, s<2?0.985:0.975);
+  }
+  function noteNameDisp(n){const m={'A#':'Bb','D#':'Eb','G#':'Ab'};return m[n]||n;}
+
+  let displayMode='notes',activeTab='neck';
+  function getKeyRoot(){const m={'Bb':'A#','Eb':'D#','Ab':'G#','Db':'C#'};const k=document.getElementById('g-cfg-key').value;return m[k]||k;}
+  function noteToNum(n){return DEG_NAMES[(NOTE_NAMES.indexOf(n)-NOTE_NAMES.indexOf(getKeyRoot())+12)%12];}
+  function dispLabel(s,f){const n=noteAt(s,f);if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return noteNameDisp(n)+'/'+noteToNum(n);return noteNameDisp(n);}
+  function getDiatonic(){const root=NOTE_NAMES.indexOf(getKeyRoot());return MAJOR_STEPS.map(i=>NOTE_NAMES[(root+i)%12]);}
+  function getFretRange(){if(document.getElementById('g-cfg-prog').checked)return{min:progMinFret,max:progMaxFret};let mn=parseInt(document.getElementById('g-fret-min').value)||0;let mx=parseInt(document.getElementById('g-fret-max').value)||12;mn=Math.max(0,Math.min(12,mn));mx=Math.max(0,Math.min(12,mx));if(mn>mx){let t=mn;mn=mx;mx=t;}return{min:mn,max:mx};}
+
+  // Progression
+  const UNLOCK_AT=12,DROP_AT=3,DRAIN_S=8,REWARD=0.40;
+  let progBase=0,progLevel=0,progMinFret=0,progMaxFret=0,progRun=0,progMiss=0,progWarn=false;
+  let progTFrac=0,progTRAF=null,progTLast=null;
+  function getBaseFret(){return Math.max(0,Math.min(12,parseInt(document.getElementById('g-cfg-base-fret').value)||0));}
+  function progRange(base,level){let lo=base,hi=base;for(let i=1;i<=level;i++){if(i%2===1){hi=Math.min(12,hi+1);}else{const newLo=Math.max(0,lo-1);if(newLo===lo)hi=Math.min(12,hi+1);else lo=newLo;}}return{min:lo,max:hi};}
+  function progInit(){progBase=getBaseFret();progLevel=0;progRun=0;progMiss=0;progWarn=false;progTFrac=0;const r=progRange(progBase,0);progMinFret=r.min;progMaxFret=r.max;}
+  function startProgTimer(){stopProgTimer();progTLast=performance.now();(function tick(now){if(!document.getElementById('g-cfg-prog').checked){progTRAF=null;return;}const dt=(now-progTLast)/1000;progTLast=now;progTFrac=Math.min(1,progTFrac+dt/DRAIN_S);updateProgUI();if(progTFrac>=1){progTFrac=0;triggerMiss();}progTRAF=requestAnimationFrame(tick);})(performance.now());}
+  function stopProgTimer(){if(progTRAF){cancelAnimationFrame(progTRAF);progTRAF=null;}progTLast=null;}
+  function triggerMiss(){progRun=0;progMiss++;if(progMiss>=DROP_AT){progMiss=0;progWarn=false;if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;buildPool();flashNeck('lock');}}else if(progMiss===DROP_AT-1)progWarn=true;updateProgUI();}
+  function progOnCorrect(){progMiss=0;progWarn=false;progTFrac=Math.max(0,progTFrac-REWARD);progRun++;if(progRun>=UNLOCK_AT){progRun=0;const nl=progLevel+1;const r=progRange(progBase,nl);if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){progLevel=nl;progMinFret=r.min;progMaxFret=r.max;buildPool();flashNeck('unlock');}}updateProgUI();}
+  function progOnMiss(){triggerMiss();}
+  function updateProgUI(){const r=progRange(progBase,progLevel);const rs=r.min===r.max?'Fret '+r.min:'Frets '+r.min+'–'+r.max;document.getElementById('g-prog-label').textContent=rs;document.getElementById('g-prog-counter').textContent=progRun+' / '+UNLOCK_AT;const hp=(progRun/UNLOCK_AT)*50;const mp=Math.min(1,progMiss/DROP_AT*0.7+progTFrac*0.3)*50;document.getElementById('g-prog-bar-hit').style.width=hp+'%';document.getElementById('g-prog-bar-miss').style.width=mp+'%';const we=document.getElementById('g-prog-warning');if(progWarn&&progLevel>0){const pr=progRange(progBase,progLevel-1);const ps=pr.min===pr.max?'fret '+pr.min:'frets '+pr.min+'–'+pr.max;we.textContent='⚠ One more miss drops to '+ps;we.classList.add('show');}else we.classList.remove('show');}
+  function flashNeck(type){const nw=document.getElementById('g-neck-wrap');nw.classList.remove('flash-unlock-nk','flash-lock-nk');void nw.offsetWidth;nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');}
+  function onProgModeChange(){const on=document.getElementById('g-cfg-prog').checked;document.getElementById('g-prog-wrap').style.display=on?'flex':'none';document.getElementById('g-manual-range-section').style.display=on?'none':'block';if(on){progInit();startProgTimer();}else stopProgTimer();updateProgUI();buildPool();buildQuestion();}
+  function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();buildPool();buildQuestion();updateProgUI();}}
+
+  // SR
+  let srData={},srMode='standard';
+  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0};return srData[k];}
+  function srRecord(s,f,hit){const d=srGet(s,f);d.total++;if(hit)d.correct++;}
+  function srWeight(s,f){const d=srGet(s,f);const acc=d.total>0?d.correct/d.total:-1;if(srMode==='intro')return d.total===0?1:acc<0.5?6:acc<0.8?3:2;if(srMode==='standard')return d.total<3?3:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;return d.total===0?8:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;}
+  function setSRMode(mode){srMode=mode;document.querySelectorAll('#g-sr-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['intro','standard','deep'][i]===mode));document.getElementById('g-sr-hint').textContent={intro:'Intro: leans on familiar positions.',standard:'Standard: neutral weighting, 3-exposure floor.',deep:'Deep: high priority for unseen.'}[mode];buildPool();}
+
+  let pool=[],neckCard=null;
+  function getDiatonicInRange(){const{min,max}=getFretRange();const p=new Set();for(let s=0;s<6;s++)for(let f=min;f<=max;f++)p.add(noteAt(s,f));return getDiatonic().filter(n=>p.has(n));}
+  function getAccInRange(){const diat=new Set(getDiatonic());const{min,max}=getFretRange();const p=new Set();for(let s=0;s<6;s++)for(let f=min;f<=max;f++)p.add(noteAt(s,f));return NOTE_NAMES.filter(n=>p.has(n)&&!diat.has(n));}
+  function noteDispLbl(n){if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return noteNameDisp(n)+'/'+noteToNum(n);return noteNameDisp(n);}
+  function buildPool(){const{min,max}=getFretRange();const keyOnly=document.getElementById('g-cfg-keyonly').checked;const diat=new Set(getDiatonic());pool=[];for(let s=0;s<6;s++)for(let f=min;f<=max;f++){if(keyOnly&&!diat.has(noteAt(s,f)))continue;const w=srWeight(s,f);for(let i=0;i<w;i++)pool.push({s,f});}}
+
+  function getNeckDims(canvas,range){const{min,max}=range;const fc=max-min+1;const av=canvas.parentElement.offsetWidth||340;const CW=Math.min(fc===1?80:av,Math.max(26,Math.floor((av-LEFT_PAD-10)/fc)));canvas.width=LEFT_PAD+fc*CW+8;canvas.height=TOP_PAD+6*ROW_H+BTM_PAD;return{CW,fc,fm:min};}
+
+  function drawNeck(canvas,highlights,interactive,onTap,rangeOverride){
+    const range=rangeOverride||getFretRange();
+    const ctx=canvas.getContext('2d');
+    const{CW,fc,fm}=getNeckDims(canvas,range);
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+    const showI=document.getElementById('g-cfg-intervals').checked;
+    const showK=document.getElementById('g-cfg-keytones').checked;
+    const keyOnly=document.getElementById('g-cfg-keyonly').checked;
+    const root=NOTE_NAMES.indexOf(getKeyRoot());
+    const diat=new Set(getDiatonic());
+    const trDeg=new Set([0,4,7]);
+    if(showK){for(let s=0;s<6;s++)for(let i=0;i<fc;i++){const f=fm+i,n=noteAt(s,f);if(!diat.has(n))continue;const x=LEFT_PAD+i*CW;const y=TOP_PAD+(5-s)*ROW_H+ROW_H/2;const deg=(NOTE_NAMES.indexOf(n)-root+12)%12;ctx.fillStyle=trDeg.has(deg)?'rgba(200,168,75,0.45)':'rgba(232,228,218,0.18)';ctx.fillRect(x-4.5,y-4.5,9,9);}}
+    for(let s=0;s<6;s++){const y=TOP_PAD+(5-s)*ROW_H+ROW_H/2;ctx.strokeStyle='rgba(127,191,176,0.5)';ctx.lineWidth=2.05-s*0.25;ctx.beginPath();ctx.moveTo(LEFT_PAD,y);ctx.lineTo(W-4,y);ctx.stroke();ctx.fillStyle='rgba(232,228,218,0.5)';ctx.font='9px IBM Plex Mono';ctx.textAlign='right';ctx.fillText(STRING_LABELS[s],LEFT_PAD-6,y+3);}
+    for(let i=0;i<=fc;i++){const f=fm+i,x=LEFT_PAD+i*CW;const isNut=f===0&&fm===0;ctx.strokeStyle=isNut?'rgba(232,228,218,0.7)':'rgba(200,168,75,0.35)';ctx.lineWidth=isNut?2.5:1;ctx.beginPath();ctx.moveTo(x,TOP_PAD+ROW_H*0.1);ctx.lineTo(x,TOP_PAD+6*ROW_H-ROW_H*0.1);ctx.stroke();}
+    for(let i=0;i<fc;i++){const f=fm+i,x=LEFT_PAD+i*CW;ctx.fillStyle='rgba(200,168,75,0.55)';ctx.font='9px IBM Plex Mono';ctx.textAlign='center';ctx.fillText(f===0?'0':f,x,14);}
+    const my=TOP_PAD+6*ROW_H+10;for(let i=0;i<fc;i++){const f=fm+i,x=LEFT_PAD+i*CW;if([3,5,9].includes(f)){ctx.beginPath();ctx.arc(x,my,3.5,0,Math.PI*2);ctx.fillStyle='rgba(200,168,75,0.5)';ctx.fill();}if([7,12].includes(f)){ctx.beginPath();ctx.arc(x-5,my,3,0,Math.PI*2);ctx.fillStyle='rgba(200,168,75,0.5)';ctx.fill();ctx.beginPath();ctx.arc(x+5,my,3,0,Math.PI*2);ctx.fill();}}
+    if(showI){for(let s=0;s<6;s++)for(let i=0;i<fc;i++){const f=fm+i,n=noteAt(s,f);if(keyOnly&&!diat.has(n))continue;const deg=DEG_NAMES[(NOTE_NAMES.indexOf(n)-root+12)%12];const x=LEFT_PAD+i*CW;const y=TOP_PAD+(5-s)*ROW_H+ROW_H/2;ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.13)';ctx.fill();ctx.fillStyle='rgba(255,255,255,0.72)';ctx.font='bold 9px IBM Plex Mono';ctx.textAlign='center';ctx.fillText(deg,x,y+3);}}
+    (highlights||[]).forEach(h=>{if(h.f<fm||h.f>=fm+fc)return;const x=LEFT_PAD+(h.f-fm)*CW;const y=TOP_PAD+(5-h.s)*ROW_H+ROW_H/2;ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle=h.color||'#c8a84b';ctx.fill();if(h.label){ctx.fillStyle='#000';ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='center';ctx.fillText(h.label,x,y+3);}});
+    canvas.ontouchstart=null;canvas.onclick=null;
+    if(interactive&&onTap){const handler=e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const sx=canvas.width/rect.width,sy=canvas.height/rect.height;const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;const col=Math.round((px-LEFT_PAD)/CW);const s=5-Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);if(col>=0&&col<fc&&s>=0&&s<6)onTap(s,fm+col);};canvas.ontouchstart=handler;canvas.onclick=handler;}
+  }
+
+  function buildKeyGrid(containerId,correctRaw,onAnswer){const diat=getDiatonicInRange();const acc=getAccInRange();const wrap=document.getElementById(containerId);wrap.innerHTML='';function makeRow(notes,label){if(!notes.length)return;const lbl=document.createElement('div');lbl.className='answer-row-label';lbl.textContent=label;wrap.appendChild(lbl);const row=document.createElement('div');row.className='answer-row';row.style.gridTemplateColumns='repeat('+notes.length+',1fr)';notes.forEach(n=>{const dn=noteDispLbl(n),dc=noteDispLbl(correctRaw);const b=document.createElement('button');b.className='answer-btn';b.textContent=dn;b.dataset.raw=n;b.onclick=()=>onAnswer(dn,dc,b,wrap);row.appendChild(b);});wrap.appendChild(row);}makeRow(diat,'Key tones');if(!document.getElementById('g-cfg-keyonly').checked)makeRow(acc,'Accidentals');}
+
+  let correct=0,total=0,dots=[];
+  function updateStats(){document.getElementById('g-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('g-streak').textContent=s;document.getElementById('g-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('g-streak-dots').innerHTML=dots.slice(-12).map(d=>`<div class="streak-dot ${d?'hit':'miss'}"></div>`).join('');}
+
+  function buildQuestion(){buildPool();if(!pool.length)return;neckCard=pool[Math.floor(Math.random()*pool.length)];document.getElementById('g-neck-feedback').textContent='';const pm={notes:'What note is highlighted?',numbers:'What degree is highlighted?',both:'Note and degree?'};document.getElementById('g-neck-prompt').textContent=pm[displayMode];if(document.getElementById('g-cfg-mc').checked)buildAnswerGrid();else document.getElementById('g-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="GN._reveal()" style="width:100%;margin-top:4px">Reveal</button>';drawNeckQ(false);playNote(neckCard.s,neckCard.f);}
+  function drawNeckQ(revealed){const canvas=document.getElementById('g-neck-canvas');if(!neckCard)return;drawNeck(canvas,[{s:neckCard.s,f:neckCard.f,color:revealed?'#7fbfb0':'#c8a84b',label:revealed?dispLabel(neckCard.s,neckCard.f):null}],false,null,getFretRange());}
+  function buildAnswerGrid(){const craw=noteAt(neckCard.s,neckCard.f);buildKeyGrid('g-neck-answer-grid',craw,(chosen,correct_lbl,btn,wrap)=>{total++;const hit=chosen===correct_lbl;srRecord(neckCard.s,neckCard.f,hit);if(document.getElementById('g-cfg-prog').checked){if(hit)progOnCorrect();else progOnMiss();}if(hit){correct++;dots.push(true);btn.classList.add('correct');document.getElementById('g-neck-feedback').textContent='Correct';document.getElementById('g-neck-feedback').className='nk-feedback';drawNeckQ(true);updateStats();setTimeout(buildQuestion,700);}else{dots.push(false);btn.classList.add('wrong');wrap.querySelectorAll('.answer-btn').forEach(b=>{if(b.textContent===correct_lbl)b.classList.add('correct');});document.getElementById('g-neck-feedback').textContent='Wrong — '+correct_lbl;document.getElementById('g-neck-feedback').className='nk-feedback wrong';drawNeckQ(true);updateStats();setTimeout(buildQuestion,1300);}});}
+
+  let refHL=null;
+  function drawRefNeck(hl){const canvas=document.getElementById('g-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('g-ref-note').textContent=lbl;document.getElementById('g-ref-label').textContent='S'+(s+1)+' · Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
+
+  function setDisplayMode(mode){displayMode=mode;document.querySelectorAll('#g-display-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['notes','numbers','both'][i]===mode));updateHeaderMode();buildQuestion();if(activeTab==='ref')setTimeout(drawRefNeck,50);}
+  function onKeyChange(){updateHeaderMode();buildQuestion();if(activeTab==='ref')setTimeout(drawRefNeck,50);if(activeTab==='neck')redrawCurrent();}
+  function updateHeaderMode(){const key=document.getElementById('g-cfg-key').value;const m={notes:'Note Names',numbers:'Nashville · '+key,both:'Notes+Degrees · '+key};document.getElementById('g-header-mode').textContent='EADGBE · '+m[displayMode];}
+  function onRangeChange(){buildPool();buildQuestion();}
+  function onKeyOnlyChange(){buildPool();buildQuestion();redrawCurrent();}
+  function redrawCurrent(){if(activeTab==='neck'&&neckCard)drawNeckQ(false);if(activeTab==='ref')setTimeout(drawRefNeck,50);}
+  function switchTab(name){activeTab=name;document.querySelectorAll('#app-guitar .itab').forEach((b,i)=>b.classList.toggle('active',['neck','ref'][i]===name));document.querySelectorAll('#app-guitar .nk-screen').forEach(s=>s.classList.remove('active'));document.getElementById('g-screen-'+name).classList.add('active');if(name==='ref')setTimeout(()=>drawRefNeck(refHL),50);if(name==='neck')setTimeout(()=>{if(neckCard)drawNeckQ(false);},50);}
+  function toggleCfg(){const p=document.getElementById('g-cfg-panel');const b=document.getElementById('g-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';}
+  function resetAll(){correct=0;total=0;dots=[];srData={};progInit();if(document.getElementById('g-cfg-prog').checked)startProgTimer();buildPool();updateStats();updateProgUI();document.getElementById('g-neck-feedback').textContent='';buildQuestion();}
+
+  return{buildQuestion,setDisplayMode,onKeyChange,onRangeChange,onKeyOnlyChange,redrawCurrent,switchTab,toggleCfg,setSRMode,resetAll,onProgModeChange,onBaseFretChange,
+    _reveal(){drawNeckQ(true);document.getElementById('g-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="GN.buildQuestion()" style="width:100%;margin-top:4px">Next →</button>';},
+    init(){updateHeaderMode();buildPool();buildQuestion();updateStats();}};
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STEEL NECK — SN  (Neck + Ref only; source: document index 2)
+// ══════════════════════════════════════════════════════════════════════════════
+const SN=(()=>{
+  // E9 tuning: strings 1-10
+  // S1=F#4 S2=D#4 S3=G#4 S4=E4 S5=B3 S6=G#3 S7=F#3 S8=E3 S9=D3 S10=B2
+  const OPEN_NOTES_S=['F#','D#','G#','E','B','G#','F#','E','D','B'];
+  const OPEN_MIDI_S =[66,63,68,64,59,56,54,52,50,47]; // verified MIDI values
+  const NOTE_NAMES_S=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const DISPLAY_MAP ={'A#':'Bb'};
+  const DEG_NAMES_S =['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+  const FRET_COLORS ={3:'#d4b800',5:'#c84040',7:'#4466cc',9:'#2a9d8f'};
+  const ROW_H=26,LEFT_PAD=52,TOP_PAD=26,BTM_PAD=10;
+
+  function sNoteName(n){return DISPLAY_MAP[n]||n;}
+  function sNoteAt(s,f){return NOTE_NAMES_S[(NOTE_NAMES_S.indexOf(OPEN_NOTES_S[s])+f)%12];}
+  function playNote(s,f){if(!document.getElementById('s-cfg-tone').checked)return;playKS(midiToHz(OPEN_MIDI_S[s]+f),0.5,0.982);}
+
+  let displayMode='notes',activeTab='neck';
+  function getKeyRoot(){const m={'Bb':'A#','Eb':'D#','Ab':'G#'};const k=document.getElementById('s-cfg-key').value;return m[k]||k;}
+  function noteToNum(n){return DEG_NAMES_S[(NOTE_NAMES_S.indexOf(n)-NOTE_NAMES_S.indexOf(getKeyRoot())+12)%12];}
+  function dispLabel(s,f){const n=sNoteAt(s,f);if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return sNoteName(n)+'/'+noteToNum(n);return sNoteName(n);}
+  function getDiatonic(){const root=NOTE_NAMES_S.indexOf(getKeyRoot());return MAJOR_STEPS.map(i=>NOTE_NAMES_S[(root+i)%12]);}
+  function getFretRange(){let mn=parseInt(document.getElementById('s-fret-min').value)||0;let mx=parseInt(document.getElementById('s-fret-max').value)||12;mn=Math.max(0,Math.min(12,mn));mx=Math.max(0,Math.min(12,mx));if(mn>mx){let t=mn;mn=mx;mx=t;}return{min:mn,max:mx};}
+
+  let srData={},srMode='standard';
+  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0};return srData[k];}
+  function srRecord(s,f,hit){const d=srGet(s,f);d.total++;if(hit)d.correct++;}
+  function srWeight(s,f){const d=srGet(s,f);const acc=d.total>0?d.correct/d.total:-1;if(srMode==='intro')return!d.total?1:acc<0.5?6:acc<0.8?3:2;if(srMode==='standard')return d.total<3?3:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;return!d.total?8:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;}
+  function setSRMode(mode){srMode=mode;document.querySelectorAll('#s-sr-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['intro','standard','deep'][i]===mode));document.getElementById('s-sr-hint').textContent={intro:'Intro: leans on familiar positions.',standard:'Standard: neutral weighting, 3-exposure floor.',deep:'Deep: high priority for unseen.'}[mode];buildPool();}
+
+  let pool=[],card=null;
+  function getDiatonicInRange(){const{min,max}=getFretRange();const p=new Set();for(let s=0;s<10;s++)for(let f=min;f<=max;f++)p.add(sNoteAt(s,f));return getDiatonic().filter(n=>p.has(n));}
+  function getAccInRange(){const diat=new Set(getDiatonic());const{min,max}=getFretRange();const p=new Set();for(let s=0;s<10;s++)for(let f=min;f<=max;f++)p.add(sNoteAt(s,f));return NOTE_NAMES_S.filter(n=>p.has(n)&&!diat.has(n));}
+  function noteDispLbl(n){if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return sNoteName(n)+'/'+noteToNum(n);return sNoteName(n);}
+  function buildPool(){const{min,max}=getFretRange();const keyOnly=document.getElementById('s-cfg-keyonly').checked;const diat=new Set(getDiatonic());pool=[];for(let s=0;s<10;s++)for(let f=min;f<=max;f++){if(keyOnly&&!diat.has(sNoteAt(s,f)))continue;const w=srWeight(s,f);for(let i=0;i<w;i++)pool.push({s,f});}}
+
+  function getNeckDims(canvas,range){const{min,max}=range;const fc=max-min+1;const av=canvas.parentElement.offsetWidth||340;const CW=Math.min(fc===1?80:av,Math.max(26,Math.floor((av-LEFT_PAD-10)/fc)));canvas.width=LEFT_PAD+fc*CW+6;canvas.height=TOP_PAD+10*ROW_H+BTM_PAD;return{CW,fc,fm:min};}
+
+  function drawNeck(canvas,highlights,interactive,onTap,range){
+    if(!range)range=getFretRange();
+    const ctx=canvas.getContext('2d');
+    const{CW,fc,fm}=getNeckDims(canvas,range);
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+    for(const[fs,col]of Object.entries(FRET_COLORS)){const f=parseInt(fs);if(f<fm||f>=fm+fc)continue;ctx.fillStyle=col+'22';ctx.fillRect(LEFT_PAD+(f-fm)*CW,TOP_PAD-8,CW,10*ROW_H+8);}
+    for(let i=0;i<fc;i++){const f=fm+i,x=LEFT_PAD+i*CW;const col=FRET_COLORS[f];ctx.fillStyle=col||(f===12?'#bbb':'#777');ctx.font=(col?'bold ':'')+('9px IBM Plex Mono');ctx.textAlign='center';ctx.fillText(f===0?'O':f,x,16);}
+    for(let s=0;s<10;s++){const y=TOP_PAD+s*ROW_H+ROW_H/2;ctx.strokeStyle='#5a8a7a';ctx.lineWidth=1+(s>6?0.4:0);ctx.beginPath();ctx.moveTo(LEFT_PAD+10,y);ctx.lineTo(W-4,y);ctx.stroke();ctx.fillStyle='#ccc';ctx.font='9px IBM Plex Mono';ctx.textAlign='right';ctx.fillText('S'+(s+1),LEFT_PAD-10,y+3);}
+    for(let i=0;i<=fc;i++){const f=fm+i,x=LEFT_PAD+i*CW;const col=FRET_COLORS[f];ctx.strokeStyle=col?col+'bb':(f===0&&fm===0?'#888':'#7a6a3a');ctx.lineWidth=(col||(f===0&&fm===0))?2:1;ctx.beginPath();ctx.moveTo(x,TOP_PAD-4);ctx.lineTo(x,TOP_PAD+10*ROW_H-4);ctx.stroke();}
+    const showK=document.getElementById('s-cfg-keytones').checked;
+    if(showK){const diat=new Set(getDiatonic());const ri=NOTE_NAMES_S.indexOf(getKeyRoot());const trD=new Set([0,4,7]);for(let s=0;s<10;s++)for(let i=0;i<fc;i++){const f=fm+i,n=NOTE_NAMES_S[(NOTE_NAMES_S.indexOf(OPEN_NOTES_S[s])+f)%12];if(!diat.has(n))continue;const deg=(NOTE_NAMES_S.indexOf(n)-ri+12)%12;const x=LEFT_PAD+i*CW;const y=TOP_PAD+s*ROW_H+ROW_H/2;ctx.fillStyle=trD.has(deg)?'rgba(200,168,75,0.45)':'rgba(255,255,255,0.18)';ctx.fillRect(x-7,y-7,14,14);}}
+    const showI=document.getElementById('s-cfg-intervals').checked;const keyOnly=document.getElementById('s-cfg-keyonly').checked;
+    if(showI){const root=NOTE_NAMES_S.indexOf(getKeyRoot());const diat=new Set(getDiatonic());for(let s=0;s<10;s++)for(let i=0;i<fc;i++){const f=fm+i,n=NOTE_NAMES_S[(NOTE_NAMES_S.indexOf(OPEN_NOTES_S[s])+f)%12];if(keyOnly&&!diat.has(n))continue;const deg=DEG_NAMES_S[(NOTE_NAMES_S.indexOf(n)-root+12)%12];const x=LEFT_PAD+i*CW;const y=TOP_PAD+s*ROW_H+ROW_H/2;ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 11px IBM Plex Mono';ctx.textAlign='center';ctx.fillText(deg,x,y+4);}}
+    (highlights||[]).forEach(h=>{if(h.f<fm||h.f>=fm+fc)return;const x=LEFT_PAD+(h.f-fm)*CW;const y=TOP_PAD+h.s*ROW_H+ROW_H/2;ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle=h.color||'#c8a84b';ctx.fill();if(h.label){ctx.fillStyle='#000';ctx.font='bold 9px IBM Plex Mono';ctx.textAlign='center';ctx.fillText(h.label,x,y+3);}});
+    canvas.ontouchstart=null;canvas.onclick=null;
+    if(interactive&&onTap){const handler=e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const sx=canvas.width/rect.width,sy=canvas.height/rect.height;const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;const col=Math.round((px-LEFT_PAD)/CW);const s=Math.round((py-TOP_PAD)/ROW_H);if(col>=0&&col<fc&&s>=0&&s<10)onTap(s,fm+col);};canvas.ontouchstart=handler;canvas.onclick=handler;}
+  }
+
+  function buildKeyGrid(containerId,correctRaw,onAnswer){const diat=getDiatonicInRange();const acc=getAccInRange();const wrap=document.getElementById(containerId);wrap.innerHTML='';function makeRow(notes,label){if(!notes.length)return;const rl=document.createElement('div');rl.className='answer-row-label';rl.textContent=label;wrap.appendChild(rl);const row=document.createElement('div');row.className='answer-row';row.style.gridTemplateColumns='repeat('+notes.length+',1fr)';notes.forEach(n=>{const dn=noteDispLbl(n),dc=noteDispLbl(correctRaw);const b=document.createElement('button');b.className='answer-btn';b.textContent=dn;b.dataset.raw=n;b.onclick=()=>onAnswer(dn,dc,b,wrap);row.appendChild(b);});wrap.appendChild(row);}makeRow(diat,'Key tones');if(!document.getElementById('s-cfg-keyonly').checked)makeRow(acc,'Accidentals');}
+
+  let correct=0,total=0,dots=[];
+  function updateStats(){document.getElementById('s-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('s-streak').textContent=s;document.getElementById('s-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('s-streak-dots').innerHTML=dots.slice(-12).map(d=>`<div class="streak-dot ${d?'hit':'miss'}"></div>`).join('');}
+
+  function newCard(){buildPool();if(!pool.length)return;card=pool[Math.floor(Math.random()*pool.length)];document.getElementById('s-neck-feedback').textContent='';const pm={notes:'What note is highlighted?',numbers:'What degree is highlighted?',both:'Note and degree?'};document.getElementById('s-neck-prompt').textContent=pm[displayMode];if(document.getElementById('s-cfg-mc').checked)buildAnswerGrid();else document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN._reveal()" style="width:100%;margin-top:4px">Reveal</button>';drawNeckCard(false);playNote(card.s,card.f);}
+  function drawNeckCard(revealed){const canvas=document.getElementById('s-neck-canvas');if(!card)return;drawNeck(canvas,[{s:card.s,f:card.f,color:revealed?'#7fbfb0':'#c8a84b',label:revealed?dispLabel(card.s,card.f):null}],false,null,getFretRange());}
+  function buildAnswerGrid(){const craw=sNoteAt(card.s,card.f);buildKeyGrid('s-neck-answer-grid',craw,(chosen,correct_lbl,btn,wrap)=>{total++;const hit=chosen===correct_lbl;srRecord(card.s,card.f,hit);if(hit){correct++;dots.push(true);btn.classList.add('correct');document.getElementById('s-neck-feedback').textContent='Correct';document.getElementById('s-neck-feedback').className='nk-feedback';drawNeckCard(true);updateStats();setTimeout(newCard,700);}else{dots.push(false);btn.classList.add('wrong');wrap.querySelectorAll('.answer-btn').forEach(b=>{if(b.textContent===correct_lbl)b.classList.add('correct');});document.getElementById('s-neck-feedback').textContent='Wrong — '+correct_lbl;document.getElementById('s-neck-feedback').className='nk-feedback wrong';drawNeckCard(true);updateStats();setTimeout(newCard,1300);}});}
+
+  let refHL=null;
+  function drawRefNeck(hl){const canvas=document.getElementById('s-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('s-ref-note').textContent=lbl;document.getElementById('s-ref-label').textContent='String '+(s+1)+' · Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
+
+  function setDisplayMode(mode){displayMode=mode;document.querySelectorAll('#s-display-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['notes','numbers','both'][i]===mode));onKeyChange();}
+  function onKeyChange(){const key=document.getElementById('s-cfg-key').value;const m={notes:'Note Names',numbers:'Nashville · '+key,both:'Notes + Numbers · '+key};document.getElementById('s-header-mode').textContent='E9 · '+m[displayMode];buildPool();newCard();if(activeTab==='ref')setTimeout(drawRefNeck,50);}
+  function onRangeChange(){buildPool();newCard();}
+  function onKeyOnlyChange(){buildPool();newCard();}
+  function redrawCurrent(){if(activeTab==='neck'&&card)drawNeckCard(false);if(activeTab==='ref')setTimeout(()=>drawRefNeck(refHL),50);}
+  function switchTab(name){activeTab=name;document.querySelectorAll('#app-steel .itab').forEach((b,i)=>b.classList.toggle('active',['neck','ref'][i]===name));document.querySelectorAll('#app-steel .nk-screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-screen-'+name).classList.add('active');if(name==='ref')setTimeout(()=>drawRefNeck(refHL),50);if(name==='neck')setTimeout(()=>{if(card)drawNeckCard(false);},50);}
+  function toggleCfg(){const p=document.getElementById('s-cfg-panel');const b=document.getElementById('s-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';}
+  function resetAll(){correct=0;total=0;dots=[];srData={};buildPool();updateStats();document.getElementById('s-neck-feedback').textContent='';newCard();}
+
+  return{newCard,setDisplayMode,onKeyChange,onRangeChange,onKeyOnlyChange,redrawCurrent,switchTab,toggleCfg,setSRMode,resetAll,
+    _reveal(){drawNeckCard(true);document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN.newCard()" style="width:100%;margin-top:4px">Next →</button>';},
+    init(){buildPool();newCard();updateStats();}};
+})();
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+TR.init();
+DI.init();
+GN.init();
+SN.init();
+</script>
+</body>
+</html>
