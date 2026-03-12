@@ -261,7 +261,7 @@ canvas{display:block;}
 
 <div class="app-title-bar">
   <span class="app-title">NKB Trainer</span>
-  <span class="app-build">2026-03-12 · 12:00 MDT</span>
+  <span class="app-build">2026-03-12 · 14:00 MDT</span>
 </div>
 
 <div class="app-nav">
@@ -352,7 +352,7 @@ canvas{display:block;}
       <div class="config-section">
         <div class="config-title">Progression</div>
         <div class="cfg-row"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="tr-unlock-val">5</span></div>
-        <input type="range" min="3" max="12" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('tr-unlock-val').textContent=this.value;TR.UNLOCK_NEEDED=parseInt(this.value);TR.updateProgUI();">
+        <input type="range" min="3" max="18" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('tr-unlock-val').textContent=this.value;TR.UNLOCK_NEEDED=parseInt(this.value);TR.updateProgUI();">
         <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="tr-drop-val">3</span></div>
         <input type="range" min="1" max="6" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('tr-drop-val').textContent=this.value;TR.DROP_NEEDED=parseInt(this.value);TR.updateProgUI();">
       </div>
@@ -419,7 +419,7 @@ canvas{display:block;}
       <div class="config-section">
         <div class="config-title">Progression</div>
         <div class="cfg-row"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="d-unlock-val">5</span></div>
-        <input type="range" min="3" max="12" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('d-unlock-val').textContent=this.value;DI.UNLOCK_NEEDED=parseInt(this.value);DI.updateProgUI();">
+        <input type="range" min="3" max="18" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('d-unlock-val').textContent=this.value;DI.UNLOCK_NEEDED=parseInt(this.value);DI.updateProgUI();">
         <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="d-drop-val">3</span></div>
         <input type="range" min="1" max="6" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('d-drop-val').textContent=this.value;DI.DROP_NEEDED=parseInt(this.value);DI.updateProgUI();">
       </div>
@@ -478,17 +478,17 @@ canvas{display:block;}
         <div class="nk-cfg-row"><label>Earn frets — timer drains on hesitation</label><label class="toggle"><input type="checkbox" id="g-cfg-prog" checked onchange="GN.onProgModeChange()"><span class="toggle-slider"></span></label></div>
         <div class="nk-cfg-row" style="margin-top:10px;"><label>Base fret</label><input class="fret-input" type="number" id="g-cfg-base-fret" value="0" min="0" max="12" onchange="GN.onBaseFretChange()"></div>
         <div class="range-hint">Starts at base fret. Unlocks alternate outward.</div>
-        <div class="cfg-row" style="margin-top:10px;"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="g-unlock-val">18</span></div>
-        <input type="range" min="6" max="24" value="18" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('g-unlock-val').textContent=this.value;GN.setUnlockAt(parseInt(this.value));">
+        <div class="cfg-row" style="margin-top:10px;"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="g-unlock-val">24</span></div>
+        <input type="range" min="6" max="36" value="24" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('g-unlock-val').textContent=this.value;GN.setUnlockAt(parseInt(this.value));">
         <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="g-drop-val">3</span></div>
         <input type="range" min="1" max="8" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('g-drop-val').textContent=this.value;GN.setDropAt(parseInt(this.value));">
       </div>
       <div class="nk-config-section">
         <div class="nk-config-title">Accidental Spelling</div>
         <div class="type-toggle" id="g-acc-spelling-toggle">
-          <button class="active" onclick="GN.setAccSpelling('sharp')">Sharp  ♯</button>
+          <button onclick="GN.setAccSpelling('sharp')">Sharp  ♯</button>
           <button onclick="GN.setAccSpelling('flat')">Flat  ♭</button>
-          <button onclick="GN.setAccSpelling('both')">Both</button>
+          <button class="active" onclick="GN.setAccSpelling('both')">Both</button>
         </div>
       </div>
       <div class="nk-config-section">
@@ -527,6 +527,15 @@ canvas{display:block;}
       <div class="stat-box"><div class="stat-val" id="s-pct">—</div><div class="stat-lbl">Accuracy</div></div>
     </div>
     <div class="score-streak" id="s-streak-dots"></div>
+    <div class="prog-wrap-nk" id="s-prog-wrap" style="display:flex;">
+      <div class="prog-header-nk"><span class="prog-label-nk" id="s-prog-label">Frets 3–3</span><span class="prog-counter-nk" id="s-prog-counter">0 / 24</span></div>
+      <div class="prog-bar-track-nk">
+        <div class="prog-bar-miss-nk" id="s-prog-bar-miss" style="width:0%;"></div>
+        <div class="prog-bar-hit-nk" id="s-prog-bar-hit" style="width:0%;"></div>
+        <div class="prog-bar-center-nk"></div>
+      </div>
+      <div class="prog-warning-nk" id="s-prog-warning"></div>
+    </div>
     <div class="nk-prompt" id="s-neck-prompt">What note is highlighted?</div>
     <div class="neck-wrap"><canvas id="s-neck-canvas"></canvas></div>
     <div class="nk-feedback" id="s-neck-feedback"></div>
@@ -550,7 +559,7 @@ canvas{display:block;}
           </div>
         </div>
       </div>
-      <div class="nk-config-section">
+      <div class="nk-config-section" id="s-manual-range-section" style="display:none;">
         <div class="nk-config-title">Fret Range</div>
         <div class="range-row">
           <label>From</label>
@@ -561,20 +570,21 @@ canvas{display:block;}
         </div>
       </div>
       <div class="nk-config-section">
-        <div class="nk-config-title">Spaced Repetition</div>
-        <div class="type-toggle" id="s-sr-mode-toggle">
-          <button onclick="SN.setSRMode('intro')">Intro</button>
-          <button class="active" onclick="SN.setSRMode('standard')">Standard</button>
-          <button onclick="SN.setSRMode('deep')">Deep</button>
-        </div>
-        <div class="range-hint" id="s-sr-hint">Standard: neutral weighting, 3-exposure floor.</div>
+        <div class="nk-config-title">Progression Mode</div>
+        <div class="nk-cfg-row"><label>Earn frets — timer drains on hesitation</label><label class="toggle"><input type="checkbox" id="s-cfg-prog" checked onchange="SN.onProgModeChange()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row" style="margin-top:10px;"><label>Base fret</label><input class="fret-input" type="number" id="s-cfg-base-fret" value="3" min="0" max="12" onchange="SN.onBaseFretChange()"></div>
+        <div class="range-hint">Starts at base fret. Unlocks alternate outward.</div>
+        <div class="cfg-row" style="margin-top:10px;"><label>Hits to unlock</label><span style="font-size:13px;color:var(--accent);" id="s-unlock-val">24</span></div>
+        <input type="range" min="6" max="36" value="24" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('s-unlock-val').textContent=this.value;SN.setUnlockAt(parseInt(this.value));">
+        <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label><span style="font-size:13px;color:var(--accent);" id="s-drop-val">3</span></div>
+        <input type="range" min="1" max="8" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;" oninput="document.getElementById('s-drop-val').textContent=this.value;SN.setDropAt(parseInt(this.value));">
       </div>
       <div class="nk-config-section">
         <div class="nk-config-title">Options</div>
         <div class="nk-cfg-row"><label>Multiple choice</label><label class="toggle"><input type="checkbox" id="s-cfg-mc" checked onchange="SN.newCard()"><span class="toggle-slider"></span></label></div>
         <div class="nk-cfg-row"><label>Play tone</label><label class="toggle"><input type="checkbox" id="s-cfg-tone" checked><span class="toggle-slider"></span></label></div>
-        <div class="nk-cfg-row"><label>Show intervals</label><label class="toggle"><input type="checkbox" id="s-cfg-intervals" onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
-        <div class="nk-cfg-row"><label>Highlight key tones</label><label class="toggle"><input type="checkbox" id="s-cfg-keytones" onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Show intervals</label><label class="toggle"><input type="checkbox" id="s-cfg-intervals" checked onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
+        <div class="nk-cfg-row"><label>Highlight key tones</label><label class="toggle"><input type="checkbox" id="s-cfg-keytones" checked onchange="SN.redrawCurrent()"><span class="toggle-slider"></span></label></div>
         <div class="nk-cfg-row"><label>Drill key tones only</label><label class="toggle"><input type="checkbox" id="s-cfg-keyonly" onchange="SN.onKeyOnlyChange()"><span class="toggle-slider"></span></label></div>
       </div>
       <button class="nk-btn danger" onclick="SN.resetAll()">Reset Stats</button>
@@ -1009,7 +1019,7 @@ const GN=(()=>{
   const LEFT_PAD=34,TOP_PAD=22,BTM_PAD=18,ROW_H=28;
 
   // accidental spelling: 'sharp' | 'flat' | 'both'
-  let accSpelling='sharp';
+  let accSpelling='both';
 
   function noteAt(s,f){return NOTE_NAMES[(NOTE_NAMES.indexOf(OPEN_NOTES[s])+f)%12];}
   function playNote(s,f){
@@ -1038,7 +1048,7 @@ const GN=(()=>{
   }
 
   // Progression
-  let UNLOCK_AT=18,DROP_AT=3;
+  let UNLOCK_AT=24,DROP_AT=3;
   const DRAIN_S=8,REWARD=0.40;
   let progBase=0,progLevel=0,progMinFret=0,progMaxFret=0,progRun=0,progMiss=0,progWarn=false;
   let progTFrac=0,progTRAF=null,progTLast=null;
@@ -1223,14 +1233,13 @@ const GN=(()=>{
     init(){progInit();startProgTimer();buildDeck();buildQuestion();updateStats();const b=HS.getBest('guitar');document.getElementById('g-best').textContent=b||'—';updateProgUI();}};
 })();
 
+
 // ══════════════════════════════════════════════════════════════════════════════
-// STEEL NECK — SN  (Neck + Ref only; source: document index 2)
+// STEEL NECK — SN  (Neck + Ref; nextDeck SR + progression mode)
 // ══════════════════════════════════════════════════════════════════════════════
 const SN=(()=>{
-  // E9 tuning: strings 1-10
-  // S1=F#4 S2=D#4 S3=G#4 S4=E4 S5=B3 S6=G#3 S7=F#3 S8=E3 S9=D3 S10=B2
   const OPEN_NOTES_S=['F#','D#','G#','E','B','G#','F#','E','D','B'];
-  const OPEN_MIDI_S =[66,63,68,64,59,56,54,52,50,47]; // verified MIDI values
+  const OPEN_MIDI_S =[66,63,68,64,59,56,54,52,50,47];
   const NOTE_NAMES_S=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   const DISPLAY_MAP ={'A#':'Bb'};
   const DEG_NAMES_S =['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
@@ -1246,21 +1255,142 @@ const SN=(()=>{
   function noteToNum(n){return DEG_NAMES_S[(NOTE_NAMES_S.indexOf(n)-NOTE_NAMES_S.indexOf(getKeyRoot())+12)%12];}
   function dispLabel(s,f){const n=sNoteAt(s,f);if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return sNoteName(n)+'/'+noteToNum(n);return sNoteName(n);}
   function getDiatonic(){const root=NOTE_NAMES_S.indexOf(getKeyRoot());return MAJOR_STEPS.map(i=>NOTE_NAMES_S[(root+i)%12]);}
-  function getFretRange(){let mn=parseInt(document.getElementById('s-fret-min').value)||0;let mx=parseInt(document.getElementById('s-fret-max').value)||12;mn=Math.max(0,Math.min(12,mn));mx=Math.max(0,Math.min(12,mx));if(mn>mx){let t=mn;mn=mx;mx=t;}return{min:mn,max:mx};}
+  function noteDispLbl(n){if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return sNoteName(n)+'/'+noteToNum(n);return sNoteName(n);}
 
-  let srData={},srMode='standard';
-  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0};return srData[k];}
+  function getFretRange(){
+    if(document.getElementById('s-cfg-prog').checked) return{min:progMinFret,max:progMaxFret};
+    let mn=parseInt(document.getElementById('s-fret-min').value)||0;
+    let mx=parseInt(document.getElementById('s-fret-max').value)||12;
+    mn=Math.max(0,Math.min(12,mn));mx=Math.max(0,Math.min(12,mx));
+    if(mn>mx){let t=mn;mn=mx;mx=t;}return{min:mn,max:mx};
+  }
+
+  // ── PROGRESSION ─────────────────────────────────────────────────────────────
+  let UNLOCK_AT=24,DROP_AT=3;
+  const DRAIN_S=8,REWARD=0.40;
+  let progBase=3,progLevel=0,progMinFret=3,progMaxFret=3,progRun=0,progMiss=0,progWarn=false;
+  let progTFrac=0,progTRAF=null,progTLast=null;
+
+  function getBaseFret(){return Math.max(0,Math.min(12,parseInt(document.getElementById('s-cfg-base-fret').value)||3));}
+  function progRange(base,level){
+    let lo=base,hi=base;
+    for(let i=1;i<=level;i++){
+      if(i%2===1){hi=Math.min(12,hi+1);}
+      else{const newLo=Math.max(0,lo-1);if(newLo===lo)hi=Math.min(12,hi+1);else lo=newLo;}
+    }
+    return{min:lo,max:hi};
+  }
+  function progInit(){progBase=getBaseFret();progLevel=0;progRun=0;progMiss=0;progWarn=false;progTFrac=0;const r=progRange(progBase,0);progMinFret=r.min;progMaxFret=r.max;}
+  function startProgTimer(){
+    stopProgTimer();progTLast=performance.now();
+    (function tick(now){
+      if(!document.getElementById('s-cfg-prog').checked){progTRAF=null;return;}
+      const dt=(now-progTLast)/1000;progTLast=now;
+      progTFrac=Math.min(1,progTFrac+dt/DRAIN_S);
+      updateProgUI();
+      if(progTFrac>=1){progTFrac=0;triggerMiss();}
+      progTRAF=requestAnimationFrame(tick);
+    })(performance.now());
+  }
+  function stopProgTimer(){if(progTRAF){cancelAnimationFrame(progTRAF);progTRAF=null;}progTLast=null;}
+  function triggerMiss(){
+    progRun=0;progMiss++;
+    if(progMiss>=DROP_AT){
+      progMiss=0;progWarn=false;
+      if(progLevel>0){progLevel--;const r=progRange(progBase,progLevel);progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('lock');}
+    }else if(progMiss===DROP_AT-1)progWarn=true;
+    updateProgUI();
+  }
+  function progOnCorrect(){
+    progMiss=0;progWarn=false;
+    progTFrac=Math.max(0,progTFrac-REWARD);
+    progRun++;
+    if(progRun>=UNLOCK_AT){
+      progRun=0;
+      const nl=progLevel+1;const r=progRange(progBase,nl);
+      if(r.min>=0&&r.max<=12&&(r.min!==progMinFret||r.max!==progMaxFret)){
+        progLevel=nl;progMinFret=r.min;progMaxFret=r.max;buildDeck();flashNeck('unlock');
+      }
+    }
+    updateProgUI();
+  }
+  function updateProgUI(){
+    const r=progRange(progBase,progLevel);
+    const rs=r.min===r.max?'Fret '+r.min:'Frets '+r.min+'\u2013'+r.max;
+    document.getElementById('s-prog-label').textContent=rs;
+    document.getElementById('s-prog-counter').textContent=progRun+' / '+UNLOCK_AT;
+    const hp=(progRun/UNLOCK_AT)*50;
+    const mp=Math.min(1,progMiss/DROP_AT*0.7+progTFrac*0.3)*50;
+    document.getElementById('s-prog-bar-hit').style.width=hp+'%';
+    document.getElementById('s-prog-bar-miss').style.width=mp+'%';
+    const we=document.getElementById('s-prog-warning');
+    if(progWarn&&progLevel>0){
+      const pr=progRange(progBase,progLevel-1);
+      const ps=pr.min===pr.max?'fret '+pr.min:'frets '+pr.min+'\u2013'+pr.max;
+      we.textContent='\u26a0 One more miss drops to '+ps;we.classList.add('show');
+    }else we.classList.remove('show');
+  }
+  function flashNeck(type){
+    const nw=document.querySelector('#s-screen-neck .neck-wrap');
+    nw.classList.remove('flash-unlock-nk','flash-lock-nk');
+    void nw.offsetWidth;
+    nw.classList.add(type==='unlock'?'flash-unlock-nk':'flash-lock-nk');
+    if(type==='unlock')levelUpSound();else levelDropSound();
+  }
+  function onProgModeChange(){
+    const on=document.getElementById('s-cfg-prog').checked;
+    document.getElementById('s-prog-wrap').style.display=on?'flex':'none';
+    document.getElementById('s-manual-range-section').style.display=on?'none':'block';
+    if(on){progInit();startProgTimer();}else stopProgTimer();
+    updateProgUI();buildDeck();newCard();
+  }
+  function onBaseFretChange(){
+    if(document.getElementById('s-cfg-prog').checked){progInit();buildDeck();newCard();updateProgUI();}
+  }
+
+  // ── nextDeck SR ──────────────────────────────────────────────────────────────
+  // tier 0 unseen → freq 1 | tier 1 <50% → freq 1 | tier 2 → freq 2 | tier 3 → freq 4 | tier 4 mastered → freq 8
+  const SR_FREQ=[1,1,2,4,8];
+  let srData={},deckCount=0,deck=[],deckPos=0,card=null,lastCards=[];
+
+  function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0,nextDeck:0};return srData[k];}
   function srRecord(s,f,hit){const d=srGet(s,f);d.total++;if(hit)d.correct++;}
-  function srWeight(s,f){const d=srGet(s,f);const acc=d.total>0?d.correct/d.total:-1;if(srMode==='intro')return!d.total?1:acc<0.5?6:acc<0.8?3:2;if(srMode==='standard')return d.total<3?3:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;return!d.total?8:acc<0.5?6:acc<0.75?4:acc>=0.9?1:2;}
-  function setSRMode(mode){srMode=mode;document.querySelectorAll('#s-sr-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['intro','standard','deep'][i]===mode));document.getElementById('s-sr-hint').textContent={intro:'Intro: leans on familiar positions.',standard:'Standard: neutral weighting, 3-exposure floor.',deep:'Deep: high priority for unseen.'}[mode];buildPool();}
+  function srTier(s,f){
+    const d=srGet(s,f);if(d.total===0)return 0;
+    const acc=d.correct/d.total;
+    if(acc<0.5)return 1;if(acc<0.75)return 2;if(acc<0.9)return 3;
+    return d.total>=3?4:3;
+  }
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
-  let pool=[],card=null;
+  function buildDeck(){
+    const{min,max}=getFretRange();
+    const keyOnly=document.getElementById('s-cfg-keyonly').checked;
+    const diat=new Set(getDiatonic());
+    deck=[];
+    for(let s=0;s<10;s++) for(let f=min;f<=max;f++){
+      if(keyOnly&&!diat.has(sNoteAt(s,f)))continue;
+      const d=srGet(s,f);
+      if(deckCount>=d.nextDeck){
+        deck.push({s,f});
+        d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
+      }
+    }
+    // safety: if everything scheduled for future, pull all eligible positions
+    if(!deck.length){
+      for(let s=0;s<10;s++) for(let f=min;f<=max;f++){
+        if(keyOnly&&!diat.has(sNoteAt(s,f)))continue;
+        const d=srGet(s,f);
+        deck.push({s,f});
+        d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
+      }
+    }
+    shuffle(deck);deckPos=0;deckCount++;
+  }
+  function drawCard(){if(deckPos>=deck.length)buildDeck();return deck[deckPos++];}
+
   function getDiatonicInRange(){const{min,max}=getFretRange();const p=new Set();for(let s=0;s<10;s++)for(let f=min;f<=max;f++)p.add(sNoteAt(s,f));return getDiatonic().filter(n=>p.has(n));}
   function getAccInRange(){const diat=new Set(getDiatonic());const{min,max}=getFretRange();const p=new Set();for(let s=0;s<10;s++)for(let f=min;f<=max;f++)p.add(sNoteAt(s,f));return NOTE_NAMES_S.filter(n=>p.has(n)&&!diat.has(n));}
-  // dispLabel(s,f) — computes note at position then formats per displayMode
-  // noteDispLbl(n) — formats an already-computed note name; used in buildKeyGrid
-  function noteDispLbl(n){if(displayMode==='numbers')return noteToNum(n);if(displayMode==='both')return sNoteName(n)+'/'+noteToNum(n);return sNoteName(n);}
-  function buildPool(){const{min,max}=getFretRange();const keyOnly=document.getElementById('s-cfg-keyonly').checked;const diat=new Set(getDiatonic());pool=[];for(let s=0;s<10;s++)for(let f=min;f<=max;f++){if(keyOnly&&!diat.has(sNoteAt(s,f)))continue;const w=srWeight(s,f);for(let i=0;i<w;i++)pool.push({s,f});}}
 
   function getNeckDims(canvas,range){const{min,max}=range;const fc=max-min+1;const av=canvas.parentElement.offsetWidth||340;const CW=Math.min(fc===1?80:av,Math.max(26,Math.floor((av-LEFT_PAD-10)/fc)));canvas.width=LEFT_PAD+fc*CW+6;canvas.height=TOP_PAD+10*ROW_H+BTM_PAD;return{CW,fc,fm:min};}
 
@@ -1283,32 +1413,98 @@ const SN=(()=>{
     if(interactive&&onTap){const handler=e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const sx=canvas.width/rect.width,sy=canvas.height/rect.height;const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;const col=Math.round((px-LEFT_PAD)/CW);const s=Math.round((py-TOP_PAD)/ROW_H);if(col>=0&&col<fc&&s>=0&&s<10)onTap(s,fm+col);};canvas.ontouchstart=handler;canvas.onclick=handler;}
   }
 
-  function buildKeyGrid(containerId,correctRaw,onAnswer){const diat=getDiatonicInRange();const acc=getAccInRange();const wrap=document.getElementById(containerId);wrap.innerHTML='';function makeRow(notes,label){if(!notes.length)return;const rl=document.createElement('div');rl.className='answer-row-label';rl.textContent=label;wrap.appendChild(rl);const row=document.createElement('div');row.className='answer-row';row.style.gridTemplateColumns='repeat('+notes.length+',1fr)';notes.forEach(n=>{const dn=noteDispLbl(n),dc=noteDispLbl(correctRaw);const b=document.createElement('button');b.className='answer-btn';b.textContent=dn;b.dataset.raw=n;b.onclick=()=>onAnswer(dn,dc,b,wrap);row.appendChild(b);});wrap.appendChild(row);}makeRow(diat,'Key tones');if(!document.getElementById('s-cfg-keyonly').checked)makeRow(acc,'Accidentals');}
+  function buildKeyGrid(containerId,correctRaw,onAnswer){
+    const diat=getDiatonicInRange();const acc=getAccInRange();
+    const wrap=document.getElementById(containerId);wrap.innerHTML='';
+    function makeRow(notes,label){
+      if(!notes.length)return;
+      const rl=document.createElement('div');rl.className='answer-row-label';rl.textContent=label;wrap.appendChild(rl);
+      const row=document.createElement('div');row.className='answer-row';row.style.gridTemplateColumns='repeat('+notes.length+',1fr)';
+      notes.forEach(n=>{const dn=noteDispLbl(n),dc=noteDispLbl(correctRaw);const b=document.createElement('button');b.className='answer-btn';b.textContent=dn;b.dataset.raw=n;b.onclick=()=>onAnswer(dn,dc,b,wrap);row.appendChild(b);});
+      wrap.appendChild(row);
+    }
+    makeRow(diat,'Key tones');
+    if(!document.getElementById('s-cfg-keyonly').checked)makeRow(acc,'Accidentals');
+  }
 
   let correct=0,total=0,dots=[];
-  function updateStats(){document.getElementById('s-correct').textContent=correct;let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}document.getElementById('s-streak').textContent=s;const isNew=s>0&&HS.maybeUpdate('steel',s);const best=HS.getBest('steel');const bestEl=document.getElementById('s-best');bestEl.textContent=best||'—';if(isNew&&s>1){bestEl.classList.add('hs-new');setTimeout(()=>bestEl.classList.remove('hs-new'),800);}document.getElementById('s-pct').textContent=total?Math.round(100*correct/total)+'%':'—';document.getElementById('s-streak-dots').innerHTML=dots.slice(-12).map(d=>`<div class="streak-dot ${d?'hit':'miss'}"></div>`).join('');}
+  function updateStats(){
+    document.getElementById('s-correct').textContent=correct;
+    let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}
+    document.getElementById('s-streak').textContent=s;
+    const isNew=s>0&&HS.maybeUpdate('steel',s);
+    const best=HS.getBest('steel');
+    const bestEl=document.getElementById('s-best');bestEl.textContent=best||'\u2014';
+    if(isNew&&s>1){bestEl.classList.add('hs-new');setTimeout(()=>bestEl.classList.remove('hs-new'),800);}
+    document.getElementById('s-pct').textContent=total?Math.round(100*correct/total)+'%':'\u2014';
+    document.getElementById('s-streak-dots').innerHTML=dots.slice(-12).map(d=>`<div class="streak-dot ${d?'hit':'miss'}"></div>`).join('');
+  }
 
-  function newCard(){buildPool();if(!pool.length)return;card=pool[Math.floor(Math.random()*pool.length)];document.getElementById('s-neck-feedback').textContent='';const pm={notes:'What note is highlighted?',numbers:'What degree is highlighted?',both:'Note and degree?'};document.getElementById('s-neck-prompt').textContent=pm[displayMode];if(document.getElementById('s-cfg-mc').checked)buildAnswerGrid();else document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN._reveal()" style="width:100%;margin-top:4px">Reveal</button>';drawNeckCard(false);playNote(card.s,card.f);}
+  function newCard(){
+    buildDeck();
+    if(!deck.length)return;
+    let candidate=drawCard();
+    if(lastCards.length===2&&lastCards[0].s===candidate.s&&lastCards[0].f===candidate.f&&lastCards[1].s===candidate.s&&lastCards[1].f===candidate.f){
+      if(deckPos<deck.length)candidate=deck[deckPos++];
+    }
+    card=candidate;
+    lastCards.push({s:card.s,f:card.f});if(lastCards.length>2)lastCards.shift();
+    document.getElementById('s-neck-feedback').textContent='';
+    const pm={notes:'What note is highlighted?',numbers:'What degree is highlighted?',both:'Note and degree?'};
+    document.getElementById('s-neck-prompt').textContent=pm[displayMode];
+    if(document.getElementById('s-cfg-mc').checked)buildAnswerGrid();
+    else document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN._reveal()" style="width:100%;margin-top:4px">Reveal</button>';
+    drawNeckCard(false);playNote(card.s,card.f);
+  }
   function drawNeckCard(revealed){const canvas=document.getElementById('s-neck-canvas');if(!card)return;drawNeck(canvas,[{s:card.s,f:card.f,color:revealed?'#7fbfb0':'#c8a84b',label:revealed?dispLabel(card.s,card.f):null}],false,null,getFretRange());}
-  function buildAnswerGrid(){const craw=sNoteAt(card.s,card.f);buildKeyGrid('s-neck-answer-grid',craw,(chosen,correct_lbl,btn,wrap)=>{total++;const hit=chosen===correct_lbl;srRecord(card.s,card.f,hit);if(hit){correct++;dots.push(true);btn.classList.add('correct');document.getElementById('s-neck-feedback').textContent='Correct';document.getElementById('s-neck-feedback').className='nk-feedback';drawNeckCard(true);updateStats();setTimeout(newCard,700);}else{dots.push(false);btn.classList.add('wrong');wrap.querySelectorAll('.answer-btn').forEach(b=>{if(b.textContent===correct_lbl)b.classList.add('correct');});document.getElementById('s-neck-feedback').textContent='Wrong — '+correct_lbl;document.getElementById('s-neck-feedback').className='nk-feedback wrong';drawNeckCard(true);updateStats();setTimeout(newCard,1300);}});}
+  function buildAnswerGrid(){
+    const craw=sNoteAt(card.s,card.f);
+    buildKeyGrid('s-neck-answer-grid',craw,(chosen,correct_lbl,btn,wrap)=>{
+      total++;const hit=chosen===correct_lbl;
+      srRecord(card.s,card.f,hit);
+      if(document.getElementById('s-cfg-prog').checked){if(hit)progOnCorrect();else triggerMiss();}
+      if(hit){
+        correct++;dots.push(true);btn.classList.add('correct');
+        document.getElementById('s-neck-feedback').textContent='Correct';
+        document.getElementById('s-neck-feedback').className='nk-feedback';
+        drawNeckCard(true);updateStats();setTimeout(newCard,700);
+      }else{
+        dots.push(false);btn.classList.add('wrong');
+        wrap.querySelectorAll('.answer-btn').forEach(b=>{if(b.textContent===correct_lbl)b.classList.add('correct');});
+        document.getElementById('s-neck-feedback').textContent='Wrong \u2014 '+correct_lbl;
+        document.getElementById('s-neck-feedback').className='nk-feedback wrong';
+        drawNeckCard(true);updateStats();setTimeout(newCard,1300);
+      }
+    });
+  }
 
   let refHL=null;
-  function drawRefNeck(hl){const canvas=document.getElementById('s-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('s-ref-note').textContent=lbl;document.getElementById('s-ref-label').textContent='String '+(s+1)+' · Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
+  function drawRefNeck(hl){const canvas=document.getElementById('s-ref-canvas');drawNeck(canvas,hl||null,true,(s,f)=>{const lbl=dispLabel(s,f);document.getElementById('s-ref-note').textContent=lbl;document.getElementById('s-ref-label').textContent='String '+(s+1)+' \u00b7 Fret '+f;playNote(s,f);refHL=[{s,f,label:lbl,color:'#c8a84b'}];drawRefNeck(refHL);},getFretRange());}
 
   function setDisplayMode(mode){displayMode=mode;document.querySelectorAll('#s-display-mode-toggle button').forEach((b,i)=>b.classList.toggle('active',['notes','numbers','both'][i]===mode));onKeyChange();}
-  function onKeyChange(){const key=document.getElementById('s-cfg-key').value;const m={notes:'Note Names',numbers:'Nashville · '+key,both:'Notes + Numbers · '+key};document.getElementById('s-header-mode').textContent='E9 · '+m[displayMode];buildPool();newCard();if(activeTab==='ref')setTimeout(drawRefNeck,50);}
-  function onRangeChange(){buildPool();newCard();}
-  function onKeyOnlyChange(){buildPool();newCard();}
+  function onKeyChange(){
+    const key=document.getElementById('s-cfg-key').value;
+    const m={notes:'Note Names',numbers:'Nashville \u00b7 '+key,both:'Notes + Numbers \u00b7 '+key};
+    document.getElementById('s-header-mode').textContent='E9 \u00b7 '+m[displayMode];
+    buildDeck();newCard();
+    if(activeTab==='ref')setTimeout(drawRefNeck,50);
+  }
+  function onRangeChange(){buildDeck();newCard();}
+  function onKeyOnlyChange(){buildDeck();newCard();}
   function redrawCurrent(){if(activeTab==='neck'&&card)drawNeckCard(false);if(activeTab==='ref')setTimeout(()=>drawRefNeck(refHL),50);}
   function switchTab(name){activeTab=name;document.querySelectorAll('#app-steel .itab').forEach((b,i)=>b.classList.toggle('active',['neck','ref'][i]===name));document.querySelectorAll('#app-steel .nk-screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-screen-'+name).classList.add('active');if(name==='ref')setTimeout(()=>drawRefNeck(refHL),50);if(name==='neck')setTimeout(()=>{if(card)drawNeckCard(false);},50);}
-  function toggleCfg(){const p=document.getElementById('s-cfg-panel');const b=document.getElementById('s-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings ▲':'Settings ▾';}
-  function resetAll(){correct=0;total=0;dots=[];srData={};buildPool();updateStats();document.getElementById('s-neck-feedback').textContent='';newCard();}
-  function resetBest(){HS.reset('steel');document.getElementById('s-best').textContent='—';}
+  function toggleCfg(){const p=document.getElementById('s-cfg-panel');const b=document.getElementById('s-cfg-toggle');const o=p.classList.toggle('open');b.textContent=o?'Settings \u25b2':'Settings \u25be';}
+  function resetAll(){correct=0;total=0;dots=[];srData={};deck=[];deckPos=0;deckCount=0;lastCards=[];progInit();if(document.getElementById('s-cfg-prog').checked)startProgTimer();buildDeck();updateStats();document.getElementById('s-neck-feedback').textContent='';updateProgUI();newCard();}
+  function resetBest(){HS.reset('steel');document.getElementById('s-best').textContent='\u2014';}
 
-  return{newCard,setDisplayMode,onKeyChange,onRangeChange,onKeyOnlyChange,redrawCurrent,switchTab,toggleCfg,setSRMode,resetAll,resetBest,
-    _reveal(){drawNeckCard(true);document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN.newCard()" style="width:100%;margin-top:4px">Next →</button>';},
-    init(){buildPool();newCard();updateStats();const b=HS.getBest('steel');document.getElementById('s-best').textContent=b||'—';}};
+  return{newCard,setDisplayMode,onKeyChange,onRangeChange,onKeyOnlyChange,redrawCurrent,switchTab,toggleCfg,resetAll,resetBest,onProgModeChange,onBaseFretChange,
+    setSRMode(){},  // retained for compat
+    setUnlockAt(v){UNLOCK_AT=v;updateProgUI();},
+    setDropAt(v){DROP_AT=v;updateProgUI();},
+    _reveal(){drawNeckCard(true);document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN.newCard()" style="width:100%;margin-top:4px">Next \u2192</button>';},
+    init(){progInit();startProgTimer();buildDeck();newCard();updateStats();updateProgUI();const b=HS.getBest('steel');document.getElementById('s-best').textContent=b||'\u2014';}};
 })();
+
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 TR.init();
