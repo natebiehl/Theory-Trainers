@@ -248,20 +248,34 @@ canvas{display:block;}
 .hs-new{animation:hsNew .8s ease;}
 
 /* Toast */
-.unlock-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
-  background:var(--panel);border:1px solid var(--accent);border-radius:4px;padding:20px 28px;
-  text-align:center;display:flex;flex-direction:column;gap:6px;pointer-events:none;
-  opacity:0;transition:opacity .2s,transform .2s;z-index:200;min-width:200px;}
-.unlock-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
-.unlock-toast-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:3px;}
-.unlock-toast-body{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.unlock-toast{position:fixed;top:52px;left:50%;transform:translateX(-50%) scale(.9);
+  background:var(--panel);border:1px solid var(--accent);border-radius:4px;padding:10px 20px;
+  text-align:center;display:flex;flex-direction:row;align-items:center;gap:10px;pointer-events:none;
+  opacity:0;transition:opacity .15s,transform .15s;z-index:200;max-width:90vw;}
+.unlock-toast.show{opacity:1;transform:translateX(-50%) scale(1);}
+.unlock-toast-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent);letter-spacing:2px;white-space:nowrap;}
+.unlock-toast-body{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+
+/* ── NOTATION MODULE ── */
+.staff-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:14px 12px 12px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+.staff-card-meta{width:100%;display:flex;justify-content:space-between;align-items:center;}
+.note-name-badge{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  border:1px solid var(--dim);border-radius:2px;padding:2px 7px;min-width:60px;text-align:center;}
+.octave-badge{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.staff-svg-wrap{background:var(--panel2);border:1px solid var(--border);border-radius:3px;
+  padding:8px 4px;display:flex;justify-content:center;width:100%;}
+.prompt-line{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;text-align:center;}
+.answer-hint{font-size:9px;letter-spacing:1px;color:var(--muted);text-align:center;
+  text-transform:uppercase;height:14px;transition:opacity .2s;}
+.nt-neck-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
 </style>
 </head>
 <body>
 
 <div class="app-title-bar">
   <span class="app-title">NKB Trainer</span>
-  <span class="app-build">2026-03-12 · 14:00 MDT</span>
+  <span class="app-build">2026-03-15 · 12:00 MDT</span>
 </div>
 
 <div class="app-nav">
@@ -269,6 +283,7 @@ canvas{display:block;}
   <button class="app-tab" onclick="switchApp('diatonic')">Nashville #s</button>
   <button class="app-tab" onclick="switchApp('guitar')">Guitar</button>
   <button class="app-tab" onclick="switchApp('steel')">Steel</button>
+  <button class="app-tab" onclick="switchApp('notation')">Notation</button>
 </div>
 
 <!-- ══ APP 1: MISSING NOTE ══ -->
@@ -606,6 +621,98 @@ canvas{display:block;}
   </div>
 </div>
 
+<!-- ══ APP 5: NOTATION ══ -->
+<div class="app-screen" id="app-notation">
+<div class="t-header">
+  <div class="t-header-left">
+    <span class="t-h1">Read Music</span>
+    <span class="t-hsub" id="nt-hdr-sub">Fret 0</span>
+  </div>
+  <div class="t-hstats">
+    <div style="text-align:center"><div class="t-hstat-val" id="nt-h-correct">0</div><div class="t-hstat-lbl">Correct</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="nt-h-streak">0</div><div class="t-hstat-lbl">Streak</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="nt-h-best">—</div><div class="t-hstat-lbl">Best</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="nt-h-pct">—</div><div class="t-hstat-lbl">Acc</div></div>
+  </div>
+</div>
+
+<div class="t-main">
+
+  <div class="prog-section">
+    <div class="prog-top">
+      <span class="prog-label" id="nt-prog-label">Unlock next fret</span>
+      <span class="prog-counter" id="nt-prog-counter">0 / 12</span>
+    </div>
+    <div class="prog-bar-track"><div class="prog-bar-fill" id="nt-prog-fill" style="width:0%"></div></div>
+    <div class="prog-warning" id="nt-prog-warn"></div>
+  </div>
+
+  <div class="timer-track"><div class="timer-fill" id="nt-timer-fill" style="width:100%;background:var(--teal);"></div></div>
+
+  <div class="staff-card">
+    <div class="staff-card-meta">
+      <span class="note-name-badge" id="nt-note-name-badge">—</span>
+      <span class="octave-badge" id="nt-octave-badge"></span>
+    </div>
+    <div class="staff-svg-wrap">
+      <svg id="nt-staff-svg" width="260" height="130" viewBox="0 0 260 130" style="overflow:visible;"></svg>
+    </div>
+    <div class="prompt-line">Tap the note on the neck below</div>
+  </div>
+
+  <div class="feedback-line" id="nt-feedback"></div>
+  <div class="streak-row" id="nt-streak-row"></div>
+
+  <div class="neck-section">
+    <div class="neck-label">Tap the correct fret</div>
+    <div class="neck-wrap" id="nt-neck-wrap">
+      <canvas id="nt-neck-canvas"></canvas>
+    </div>
+    <div class="answer-hint" id="nt-answer-hint"></div>
+  </div>
+
+  <button class="t-btn" id="nt-cfg-btn" onclick="NT.toggleCfg()">Settings ▾</button>
+  <div class="cfg-panel" id="nt-cfg-panel">
+    <div class="config-section">
+      <div class="config-title">Timer Speed</div>
+      <div class="speed-grid">
+        <button class="speed-btn" data-s="18" onclick="NT.setSpeed(this)">Slow</button>
+        <button class="speed-btn on" data-s="12" onclick="NT.setSpeed(this)">Normal</button>
+        <button class="speed-btn" data-s="7" onclick="NT.setSpeed(this)">Fast</button>
+        <button class="speed-btn" data-s="3" onclick="NT.setSpeed(this)">Brutal</button>
+      </div>
+    </div>
+    <div class="config-section">
+      <div class="config-title">Display</div>
+      <div class="cfg-row"><label>Show note name on staff card</label>
+        <label class="toggle"><input type="checkbox" id="nt-cfg-show-name" checked onchange="NT.redrawStaff()">
+        <span class="toggle-slider"></span></label>
+      </div>
+      <div class="cfg-row"><label>Reveal all positions after wrong</label>
+        <label class="toggle"><input type="checkbox" id="nt-cfg-reveal" checked>
+        <span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="config-section">
+      <div class="config-title">Progression</div>
+      <div class="cfg-row"><label>Hits to unlock next fret</label>
+        <span style="font-size:13px;color:var(--accent);" id="nt-unlock-val">12</span>
+      </div>
+      <input type="range" min="4" max="30" value="12" style="width:100%;accent-color:var(--accent);margin-top:4px;"
+        oninput="document.getElementById('unlock-val').textContent=this.value;UNLOCK_NEEDED=parseInt(this.value);updateProgUI();">
+      <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop a fret</label>
+        <span style="font-size:13px;color:var(--accent);" id="nt-drop-val">3</span>
+      </div>
+      <input type="range" min="1" max="8" value="3" style="width:100%;accent-color:var(--accent);margin-top:4px;"
+        oninput="document.getElementById('drop-val').textContent=this.value;DROP_NEEDED=parseInt(this.value);updateProgUI();">
+    </div>
+    <button class="t-btn" onclick="NT.resetAll()">Reset Progress</button>
+    <button class="t-btn subdued" onclick="NT.resetBest()">Reset Best Streak</button>
+  </div>
+
+</div>
+</div>
+
 <div class="unlock-toast" id="unlock-toast">
   <div class="unlock-toast-title" id="toast-title">Unlocked!</div>
   <div class="unlock-toast-body" id="toast-body"></div>
@@ -712,7 +819,7 @@ function showToast(title,body){
   document.getElementById('toast-body').textContent=body;
   t.classList.add('show');
   if(_toastT) clearTimeout(_toastT);
-  _toastT=setTimeout(()=>t.classList.remove('show'),2200);
+  _toastT=setTimeout(()=>t.classList.remove('show'),800);
 }
 
 // App switcher
@@ -720,14 +827,15 @@ let _currentApp='triads';
 function switchApp(name){
   _currentApp=name;
   document.querySelectorAll('.app-tab').forEach((b,i)=>
-    b.classList.toggle('active',['triads','diatonic','guitar','steel'][i]===name));
+    b.classList.toggle('active',['triads','diatonic','guitar','steel','notation'][i]===name));
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('app-'+name).classList.add('active');
   if(name==='triads'){ TR.stopTimer(); if(!TR.answered) TR.startTimer(); DI.stopTimer(); }
   else if(name==='diatonic'){ TR.stopTimer(); DI.stopTimer(); if(!DI.answered) DI.startTimer(); }
   else{ TR.stopTimer(); DI.stopTimer(); }
-  if(name==='guitar') setTimeout(()=>GN.redrawCurrent(),50);
-  if(name==='steel')  setTimeout(()=>SN.redrawCurrent(),50);
+  if(name==='guitar'){GN._startProg();setTimeout(()=>GN.redrawCurrent(),50);}else GN._stopProg();
+  if(name==='steel'){SN._startProg();setTimeout(()=>SN.redrawCurrent(),50);}else SN._stopProg();
+  if(name==='notation'){NT.startTimer();setTimeout(()=>NT.redraw(),50);}else NT.stopTimer();
   rotationTimer.onSwitch(name);
 }
 
@@ -736,8 +844,8 @@ function switchApp(name){
 // suggesting a switch. Resets when the user actually switches.
 const rotationTimer=(()=>{
   const REMIND_MS=15*60*1000;
-  const NAMES={triads:'Triads',diatonic:'Nashville #s',guitar:'Guitar Neck',steel:'Steel Neck'};
-  const OTHERS={triads:['Nashville #s','Guitar Neck','Steel Neck'],diatonic:['Triads','Guitar Neck','Steel Neck'],guitar:['Triads','Nashville #s','Steel Neck'],steel:['Triads','Nashville #s','Guitar Neck']};
+  const NAMES={triads:'Triads',diatonic:'Nashville #s',guitar:'Guitar Neck',steel:'Steel Neck',notation:'Notation'};
+  const OTHERS={triads:['Nashville #s','Guitar Neck','Steel Neck','Notation'],diatonic:['Triads','Guitar Neck','Steel Neck','Notation'],guitar:['Triads','Nashville #s','Steel Neck','Notation'],steel:['Triads','Nashville #s','Guitar Neck','Notation'],notation:['Triads','Nashville #s','Guitar Neck','Steel Neck']};
   let current=null,elapsed=0,lastTick=null,raf=null,fired=false;
 
   function tick(now){
@@ -1065,14 +1173,6 @@ const GN=(()=>{
   function onBaseFretChange(){if(document.getElementById('g-cfg-prog').checked){progInit();buildDeck();buildQuestion();updateProgUI();}}
 
   // SR — nextDeck scheduling
-  // Each position tracks when it's next due (srData[k].nextDeck).
-  // After being dealt, nextDeck = deckCount + freq based on tier:
-  //   tier 0 — unseen                      → freq 1 (every deck)
-  //   tier 1 — acc < 0.5  (struggling)     → freq 1 (every deck)
-  //   tier 2 — acc 0.5–0.75                → freq 2 (every 2nd)
-  //   tier 3 — acc 0.75–0.9                → freq 4 (every 4th)
-  //   tier 4 — acc >= 0.9, total >= 3      → freq 8 (every 8th)
-  // One copy per position per deck — no clustering, full coverage each pass.
   const SR_FREQ=[1,1,2,4,8];
   let srData={},deckCount=0;
   function srGet(s,f){const k=s+','+f;if(!srData[k])srData[k]={correct:0,total:0,nextDeck:0};return srData[k];}
@@ -1088,7 +1188,7 @@ const GN=(()=>{
     if(acc<0.5) return 1;
     if(acc<0.75) return 2;
     if(acc<0.9) return 3;
-    return d.total>=3?4:3; // need 3 exposures before graduating to near-dormant
+    return d.total>=3?4:3;
   }
 
   // Shuffled deck — one copy of each due position, full coverage per pass
@@ -1104,7 +1204,6 @@ const GN=(()=>{
         d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
       }
     }
-    // safety: if everything is on a future cycle, pull in all overdue positions
     if(!deck.length){
       for(let s=0;s<6;s++) for(let f=min;f<=max;f++){
         const d=srGet(s,f);
@@ -1138,11 +1237,9 @@ const GN=(()=>{
     if(interactive&&onTap){const handler=e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const sx=canvas.width/rect.width,sy=canvas.height/rect.height;const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;const col=Math.round((px-LEFT_PAD)/CW);const s=5-Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);if(col>=0&&col<fc&&s>=0&&s<6)onTap(s,fm+col);};canvas.ontouchstart=handler;canvas.onclick=handler;}
   }
 
-  // Piano-layout answer grid: 7-col naturals, 7-col accidentals with gaps at E and B positions
-  // Natural cols:    C  D  E  F  G  A  B   (indices 0-6)
-  // Accidental cols: _  C# D# _  F# G# A#  (gaps at 0 and 3, matching E/B having no sharp)
+  // Piano-layout answer grid
   const NAT_NOTES  = ['C','D','E','F','G','A','B'];
-  const ACC_SLOTS  = [null,'C#','D#',null,'F#','G#','A#']; // null = empty cell
+  const ACC_SLOTS  = [null,'C#','D#',null,'F#','G#','A#'];
   function buildAnswerGrid(){
     const wrap=document.getElementById('g-neck-answer-grid');
     wrap.innerHTML='';
@@ -1181,7 +1278,6 @@ const GN=(()=>{
       drawNeckQ(true);updateStats();setTimeout(buildQuestion,700);
     }else{
       dots.push(false);btn.classList.add('wrong');
-      // highlight correct button(s) — need to match enharmonic
       wrap.querySelectorAll('.answer-btn').forEach(b=>{
         if(NOTE_NAMES.indexOf(b.dataset.raw)===NOTE_NAMES.indexOf(correctRaw)) b.classList.add('correct');
       });
@@ -1196,9 +1292,7 @@ const GN=(()=>{
 
   function buildQuestion(){
     if(!deck.length) buildDeck();
-    // draw next card from shuffled deck
     let candidate=drawCard();
-    // no-triple-repeat: if this position matched both last 2 cards, try the next slot once
     if(lastCards.length===2&&lastCards[0].s===candidate.s&&lastCards[0].f===candidate.f&&lastCards[1].s===candidate.s&&lastCards[1].f===candidate.f){
       if(deckPos<deck.length) candidate=deck[deckPos++];
     }
@@ -1229,6 +1323,8 @@ const GN=(()=>{
   return{buildQuestion,setAccSpelling,onRangeChange,redrawCurrent,switchTab,toggleCfg,resetAll,resetBest,onProgModeChange,onBaseFretChange,
     setUnlockAt(v){UNLOCK_AT=v;updateProgUI();},
     setDropAt(v){DROP_AT=v;updateProgUI();},
+    _startProg(){if(document.getElementById('g-cfg-prog').checked)startProgTimer();},
+    _stopProg(){stopProgTimer();},
     _reveal(){drawNeckQ(true);document.getElementById('g-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="GN.buildQuestion()" style="width:100%;margin-top:4px">Next →</button>';},
     init(){progInit();startProgTimer();buildDeck();buildQuestion();updateStats();const b=HS.getBest('guitar');document.getElementById('g-best').textContent=b||'—';updateProgUI();}};
 })();
@@ -1349,7 +1445,6 @@ const SN=(()=>{
   }
 
   // ── nextDeck SR ──────────────────────────────────────────────────────────────
-  // tier 0 unseen → freq 1 | tier 1 <50% → freq 1 | tier 2 → freq 2 | tier 3 → freq 4 | tier 4 mastered → freq 8
   const SR_FREQ=[1,1,2,4,8];
   let srData={},deckCount=0,deck=[],deckPos=0,card=null,lastCards=[];
 
@@ -1376,7 +1471,6 @@ const SN=(()=>{
         d.nextDeck=deckCount+SR_FREQ[srTier(s,f)];
       }
     }
-    // safety: if everything scheduled for future, pull all eligible positions
     if(!deck.length){
       for(let s=0;s<10;s++) for(let f=min;f<=max;f++){
         if(keyOnly&&!diat.has(sNoteAt(s,f)))continue;
@@ -1498,20 +1592,611 @@ const SN=(()=>{
   function resetBest(){HS.reset('steel');document.getElementById('s-best').textContent='\u2014';}
 
   return{newCard,setDisplayMode,onKeyChange,onRangeChange,onKeyOnlyChange,redrawCurrent,switchTab,toggleCfg,resetAll,resetBest,onProgModeChange,onBaseFretChange,
-    setSRMode(){},  // retained for compat
+    setSRMode(){},
     setUnlockAt(v){UNLOCK_AT=v;updateProgUI();},
     setDropAt(v){DROP_AT=v;updateProgUI();},
+    _startProg(){if(document.getElementById('s-cfg-prog').checked)startProgTimer();},
+    _stopProg(){stopProgTimer();},
     _reveal(){drawNeckCard(true);document.getElementById('s-neck-answer-grid').innerHTML='<button class="nk-btn" onclick="SN.newCard()" style="width:100%;margin-top:4px">Next \u2192</button>';},
     init(){progInit();startProgTimer();buildDeck();newCard();updateStats();updateProgUI();const b=HS.getBest('steel');document.getElementById('s-best').textContent=b||'\u2014';}};
 })();
 
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NOTATION — NT
+// ══════════════════════════════════════════════════════════════════════════════
+const NT=(()=>{
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MUSIC DATA
+// Guitar standard tuning: E2 A2 D3 G3 B3 E4
+// MIDI: 40 45 50 55 59 64
+// First position = frets 0–4 → pitch range E2(40) to A4(69) but practically E4(64) top
+//
+// Staff rendering: treble clef, guitar sounds an octave lower than written
+// (convention: written note = sounding note + octave)
+// Written range for first position: E3–G5 (displayed), sounding E2–G4
+// We'll display written pitch (standard guitar notation convention)
+//
+// Note positions on treble clef staff (lines from bottom: E4 G4 B4 D5 F5 written)
+// Spaces from bottom: F4 A4 C5 E5
+// Below staff: ledger lines for D4, C4, B3, A3, G3, F3, E3 (written)
+// which sound as D3, C3, B2, A2, G2, F2, E2
+// ══════════════════════════════════════════════════════════════════════════════
+
+// All chromatic pitches in written notation (guitar sounds 8va bassa)
+// We store as {name, octave, staffStep} where staffStep is half-steps from middle C (C4 written = C3 sounding)
+// staffStep: number of diatonic steps from B3_written (one ledger line below staff)
+// Staff lines (written treble): E4=0 G4=2 B4=4 D5=6 F5=8  (diatonic steps from E4)
+// We use absolute diatonic step from C4_written = 0:  C=0 D=1 E=2 F=3 G=4 A=5 B=6 then +7 per octave
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const DIAT_NAME  = ['C','D','E','F','G','A','B'];
+
+// For each fret position {s, f}, compute the sounding MIDI pitch and
+// the written note name + diatonic staff position.
+// Guitar written = sounding + 12 semitones (octave up for notation)
+const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // E2 A2 D3 G3 B3 E4 sounding
+const OPEN_NAMES = ['E','A','D','G','B','E'];
+
+function soundingMidi(s, f){ return OPEN_MIDI[s] + f; }
+function writtenMidi(s, f){ return soundingMidi(s, f) + 12; }
+
+// Diatonic step from C4 (written) — used for staff placement
+// MIDI 60 = C4 written → diatonic step 0
+// Each octave = 7 diatonic steps
+// C=0 D=1 E=2 F=3 G=4 A=5 B=6 (within octave)
+const SEMITONE_TO_DIAT = [0,0,1,1,2,3,3,4,4,5,5,6]; // C C# D D# E F F# G G# A A# B
+function midiToDiatStep(midi){
+  const oct = Math.floor(midi/12) - 1; // MIDI octave (C4=oct4)
+  const pc  = midi % 12;
+  return (oct - 4)*7 + SEMITONE_TO_DIAT[pc]; // relative to C4
+}
+
+// Canonical note name (no sharps for display on staff — use flats for Bb etc but keep simple)
+// We'll always use sharps for simplicity
+function midiToNoteName(midi){
+  return NOTE_NAMES[midi % 12];
+}
+function midiToOctave(midi){
+  return Math.floor(midi/12) - 1;
+}
+
+// ── MASTER NOTE POOL ─────────────────────────────────────────────────────────
+// All unique pitches in first position, grouped by written pitch (enharmonic duplicates merged)
+// For each written MIDI pitch, collect all {s, f} positions that produce it
+// Written range: fret 0–4, strings 0–5 → written MIDI 52..76 (E3_written..E5_written? let's check)
+// String 0, fret 0: E2 sounding → E3 written (MIDI 52)
+// String 5, fret 4: E4+4=F#4 sounding → F#5 written (MIDI 78)
+// So written range MIDI 52–78
+
+function buildNotePool(){
+  // Map: writtenMidi → [{s, f}, ...]
+  const byPitch = {};
+  for(let s=0;s<6;s++){
+    for(let f=0;f<=4;f++){
+      const wm = writtenMidi(s,f);
+      if(!byPitch[wm]) byPitch[wm]=[];
+      byPitch[wm].push({s,f});
+    }
+  }
+  // Convert to array sorted by pitch
+  return Object.entries(byPitch)
+    .map(([wm,positions])=>({
+      writtenMidi: parseInt(wm),
+      name: midiToNoteName(parseInt(wm)),
+      octave: midiToOctave(parseInt(wm)),
+      diatStep: midiToDiatStep(parseInt(wm)),
+      positions, // all valid {s,f} answers
+    }))
+    .sort((a,b)=>a.writtenMidi-b.writtenMidi);
+}
+const ALL_NOTES_POOL = buildNotePool();
+
+// ── PROGRESSION: unlock by fret ───────────────────────────────────────────────
+// Start with fret 0 (open strings). Each unlock adds fret 1, then 2, etc.
+// Cards for a given fret level = all pitches achievable at frets 0..currentMaxFret
+let maxFret = 0; // currently unlocked max fret
+let UNLOCK_NEEDED = 12;
+let DROP_NEEDED = 3;
+let progHits = 0, progMisses = 0;
+
+function getActivePool(){
+  return ALL_NOTES_POOL.filter(n =>
+    n.positions.some(p => p.f <= maxFret)
+  );
+}
+
+function updateProgUI(){
+  const atMax = maxFret >= 4;
+  document.getElementById('nt-prog-label').textContent = atMax ? 'All frets unlocked!' : `Unlock fret ${maxFret+1}`;
+  document.getElementById('nt-prog-counter').textContent = atMax ? '✓' : `${progHits} / ${UNLOCK_NEEDED}`;
+  document.getElementById('nt-prog-fill').style.width = atMax ? '100%' : (progHits/UNLOCK_NEEDED*100)+'%';
+  document.getElementById('nt-hdr-sub').textContent = `Frets 0–${maxFret}`;
+  const w = document.getElementById('nt-prog-warn');
+  if(progMisses === DROP_NEEDED-1 && maxFret > 0){
+    w.textContent = `⚠ One more miss — drops to frets 0–${maxFret-1}`;
+    w.classList.add('show');
+  } else {
+    w.textContent = '';
+    w.classList.remove('show');
+  }
+}
+
+function onHit(){
+  progMisses = 0;
+  tFrac = Math.min(1, tFrac + 0.30);
+  progHits++;
+  if(progHits >= UNLOCK_NEEDED){
+    progHits = 0;
+    if(maxFret < 4){
+      maxFret++;
+      showToast('Unlocked', `Fret ${maxFret} added`);
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-unlock');
+    }
+  }
+  updateProgUI();
+}
+
+function onMiss(){
+  progHits = 0;
+  progMisses++;
+  if(progMisses >= DROP_NEEDED){
+    progMisses = 0;
+    if(maxFret > 0){
+      maxFret--;
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-lock');
+    }
+  }
+  updateProgUI();
+}
+
+// ── SPACED REPETITION ────────────────────────────────────────────────────────
+const SR_FREQ = [1,1,2,4,8];
+let srData = {}, deckCount = 0, deck = [], deckPos = 0, lastCards = [];
+
+function srGet(wm){ if(!srData[wm]) srData[wm]={correct:0,total:0,nextDeck:0}; return srData[wm]; }
+function srRecord(wm,hit){ const d=srGet(wm); d.total++; if(hit) d.correct++; }
+function srTier(wm){
+  const d=srGet(wm); if(d.total===0) return 0;
+  const acc=d.correct/d.total;
+  if(acc<0.5) return 1; if(acc<0.75) return 2; if(acc<0.9) return 3;
+  return d.total>=3?4:3;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; }
+
+function buildDeck(){
+  const pool = getActivePool();
+  deck = [];
+  for(const n of pool){
+    const d = srGet(n.writtenMidi);
+    if(deckCount >= d.nextDeck){
+      deck.push(n);
+      d.nextDeck = deckCount + SR_FREQ[srTier(n.writtenMidi)];
+    }
+  }
+  if(!deck.length){
+    for(const n of pool){
+      const d = srGet(n.writtenMidi);
+      deck.push(n);
+      d.nextDeck = deckCount + SR_FREQ[srTier(n.writtenMidi)];
+    }
+  }
+  shuffle(deck); deckPos = 0; deckCount++;
+}
+
+function drawCard(){
+  if(deckPos >= deck.length) buildDeck();
+  return deck[deckPos++];
+}
+
+// ── CURRENT QUESTION STATE ────────────────────────────────────────────────────
+let q = null, answered = false;
+
+function pick(){
+  buildDeck();
+  let card = drawCard();
+  // no triple repeat
+  if(lastCards.length===2 && lastCards[0]===card.writtenMidi && lastCards[1]===card.writtenMidi){
+    if(deckPos < deck.length) card = deck[deckPos++];
+  }
+  lastCards.push(card.writtenMidi); if(lastCards.length>2) lastCards.shift();
+  return card;
+}
+
+// ── TIMER — continuous drain (GN/SN model) ────────────────────────────────────
+// tFrac fills 0→1. When full, fires a miss and resets. Correct answers push it back.
+const REWARD = 0.40;
+let DRAIN_S = 12; // mutable so setSpeed can update it
+let tFrac = 0, tRAF = null, tLast = null;
+
+function startTimer(){
+  stopTimer(); tLast = performance.now();
+  (function tick(now){
+    const dt = (now - tLast)/1000; tLast = now;
+    tFrac = Math.min(1, tFrac + dt / DRAIN_S);
+    renderTimer();
+    if(tFrac >= 1){ tFrac = 0; onTimeout(); }
+    tRAF = requestAnimationFrame(tick);
+  })(performance.now());
+}
+function stopTimer(){ if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;} }
+function renderTimer(){
+  const el = document.getElementById('nt-timer-fill');
+  const remaining = 1 - tFrac;
+  el.style.width = (remaining*100)+'%';
+  el.style.background = remaining>0.5?'var(--teal)':remaining>0.25?'var(--accent)':'var(--wrong)';
+}
+function onTimeout(){
+  if(answered) return;
+  total++; dots.push(false);
+  onMiss(); srRecord(q.writtenMidi, false);
+  setFb('Time — '+q.name+q.octave, 'wrong');
+  if(document.getElementById('nt-cfg-reveal').checked) revealPositions();
+  updateStats();
+  answered = true;
+  setTimeout(()=>{ answered=false; next(); }, 1200);
+}
+
+// ── STAFF DRAWING ─────────────────────────────────────────────────────────────
+// Staff lines in diatonic steps from C4_written:
+// E4=2 G4=4 B4=6 D5=8 F5=10  (treble clef lines, bottom to top)
+// We draw the staff centered in the SVG
+// staffY(diatStep) converts diatonic step → pixel y
+
+const SVG_W = 260, SVG_H = 130;
+const STAFF_LEFT = 50, STAFF_RIGHT = 240;
+const LINE_STEP = 9; // pixels between staff lines
+// Bottom line of staff = E4_written = diatStep 2 (C4=0, D4=1, E4=2)
+// We place bottom line at y=86 (leaves room for ledger lines below)
+const BOTTOM_LINE_Y = 86;
+const BOTTOM_LINE_DSTEP = 2; // E4 written
+
+function staffY(diatStep){
+  // Each diatonic step = half a LINE_STEP
+  const stepsFromBottom = diatStep - BOTTOM_LINE_DSTEP;
+  return BOTTOM_LINE_Y - stepsFromBottom * (LINE_STEP / 2);
+}
+
+function drawStaff(note, revealed){
+  const svg = document.getElementById('nt-staff-svg');
+  let h = '';
+
+  // ── 5 staff lines ──
+  for(let i=0;i<5;i++){
+    const y = BOTTOM_LINE_Y - i*LINE_STEP;
+    h += `<line x1="${STAFF_LEFT}" y1="${y}" x2="${STAFF_RIGHT}" y2="${y}" stroke="rgba(232,228,218,0.3)" stroke-width="1"/>`;
+  }
+
+  // ── Treble clef ──
+  h += `<text x="38" y="${BOTTOM_LINE_Y+14}" font-size="72" fill="rgba(200,168,75,0.55)" font-family="serif" text-anchor="middle">𝄞</text>`;
+
+  // ── Ledger lines if needed ──
+  const ds = note.diatStep;
+  const topLineDS = BOTTOM_LINE_DSTEP + 8; // F5
+  // Below staff: ledger lines for every even diatStep below BOTTOM_LINE_DSTEP
+  // Above staff: ledger lines for every even diatStep above topLineDS
+  if(ds < BOTTOM_LINE_DSTEP){
+    for(let d = BOTTOM_LINE_DSTEP-2; d >= ds-(ds%2===0?0:1); d-=2){
+      if(d > ds-2) { // only draw ledger lines up to and including note's line
+        const ly = staffY(d);
+        h += `<line x1="118" y1="${ly}" x2="152" y2="${ly}" stroke="rgba(232,228,218,0.4)" stroke-width="1.5"/>`;
+      }
+    }
+    // Always draw the ledger line at the note's diatonic step if it's on a line (even)
+    if(ds % 2 === 0){
+      const ly = staffY(ds);
+      h += `<line x1="118" y1="${ly}" x2="152" y2="${ly}" stroke="rgba(232,228,218,0.4)" stroke-width="1.5"/>`;
+    }
+  }
+  if(ds > topLineDS){
+    for(let d = topLineDS+2; d <= ds+(ds%2===0?0:1); d+=2){
+      const ly = staffY(d);
+      h += `<line x1="118" y1="${ly}" x2="152" y2="${ly}" stroke="rgba(232,228,218,0.4)" stroke-width="1.5"/>`;
+    }
+    if(ds % 2 === 0){
+      const ly = staffY(ds);
+      h += `<line x1="118" y1="${ly}" x2="152" y2="${ly}" stroke="rgba(232,228,218,0.4)" stroke-width="1.5"/>`;
+    }
+  }
+
+  // ── Note head ──
+  const ny = staffY(ds);
+  const nx = 134;
+  const noteColor = revealed ? 'var(--teal)' : 'var(--accent)';
+  h += `<ellipse cx="${nx}" cy="${ny}" rx="8" ry="6" fill="${noteColor}" transform="rotate(-15,${nx},${ny})"/>`;
+
+  // ── Stem (up if below middle of staff, down if above) ──
+  const midDS = BOTTOM_LINE_DSTEP + 4; // B4
+  if(ds <= midDS){
+    h += `<line x1="${nx+7}" y1="${ny}" x2="${nx+7}" y2="${ny-32}" stroke="${noteColor}" stroke-width="1.5"/>`;
+  } else {
+    h += `<line x1="${nx-7}" y1="${ny}" x2="${nx-7}" y2="${ny+32}" stroke="${noteColor}" stroke-width="1.5"/>`;
+  }
+
+  // ── Accidental ──
+  const pc = note.writtenMidi % 12;
+  const isSharp = [1,3,6,8,10].includes(pc);
+  if(isSharp){
+    h += `<text x="${nx-18}" y="${ny+5}" font-size="16" fill="${noteColor}" font-family="serif" text-anchor="middle">♯</text>`;
+  }
+
+  // ── Note name label (shown if setting on or revealed) ──
+  const showName = document.getElementById('nt-cfg-show-name').checked;
+  if(showName || revealed){
+    const label = note.name + note.octave;
+    h += `<text x="${nx}" y="${SVG_H-6}" font-size="9" fill="rgba(127,191,176,0.7)" font-family="IBM Plex Mono,monospace" text-anchor="middle" letter-spacing="1">${label}</text>`;
+  }
+
+  svg.innerHTML = h;
+}
+
+// ── NECK DRAWING ──────────────────────────────────────────────────────────────
+const LEFT_PAD=34, TOP_PAD=22, BTM_PAD=14, ROW_H=28;
+const STRING_LABELS=['S1','S2','S3','S4','S5','S6'];
+
+function getNeckDims(canvas){
+  const fc = maxFret + 1;
+  const av = canvas.parentElement.offsetWidth || 320;
+  const CW = Math.max(28, Math.floor((av - LEFT_PAD - 10) / fc));
+  canvas.width = LEFT_PAD + fc*CW + 8;
+  canvas.height = TOP_PAD + 6*ROW_H + BTM_PAD;
+  return {CW, fc, fm:0};
+}
+
+function drawNeck(highlights, interactive, onTap){
+  const canvas = document.getElementById('nt-neck-canvas');
+  const ctx = canvas.getContext('2d');
+  const {CW, fc, fm} = getNeckDims(canvas);
+  const W = canvas.width;
+  ctx.clearRect(0,0,W,canvas.height);
+  ctx.fillStyle='#111'; ctx.fillRect(0,0,W,canvas.height);
+
+  // strings
+  for(let s=0;s<6;s++){
+    const y=TOP_PAD+(5-s)*ROW_H+ROW_H/2;
+    ctx.strokeStyle='rgba(127,191,176,0.5)';
+    ctx.lineWidth=2.05-s*0.25;
+    ctx.beginPath(); ctx.moveTo(LEFT_PAD,y); ctx.lineTo(W-4,y); ctx.stroke();
+    ctx.fillStyle='rgba(232,228,218,0.5)';
+    ctx.font='9px IBM Plex Mono'; ctx.textAlign='right';
+    ctx.fillText(STRING_LABELS[s], LEFT_PAD-6, y+3);
+  }
+
+  // frets + nut
+  for(let i=0;i<=fc;i++){
+    const f=fm+i, x=LEFT_PAD+i*CW;
+    const isNut = f===0;
+    ctx.strokeStyle=isNut?'rgba(232,228,218,0.7)':'rgba(200,168,75,0.35)';
+    ctx.lineWidth=isNut?2.5:1;
+    ctx.beginPath(); ctx.moveTo(x,TOP_PAD+ROW_H*0.1); ctx.lineTo(x,TOP_PAD+6*ROW_H-ROW_H*0.1); ctx.stroke();
+  }
+
+  // fret numbers
+  for(let i=0;i<fc;i++){
+    const f=fm+i, x=LEFT_PAD+i*CW;
+    ctx.fillStyle='rgba(200,168,75,0.55)';
+    ctx.font='9px IBM Plex Mono'; ctx.textAlign='center';
+    ctx.fillText(f===0?'0':f, x, 14);
+  }
+
+  // position markers
+  const my=TOP_PAD+6*ROW_H+8;
+  for(let i=0;i<fc;i++){
+    const f=fm+i, x=LEFT_PAD+i*CW;
+    if([3].includes(f)){
+      ctx.beginPath(); ctx.arc(x,my,3.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(200,168,75,0.5)'; ctx.fill();
+    }
+  }
+
+  // highlights
+  (highlights||[]).forEach(h=>{
+    if(h.f > maxFret) return;
+    const x=LEFT_PAD+(h.f-fm)*CW;
+    const y=TOP_PAD+(5-h.s)*ROW_H+ROW_H/2;
+    ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
+    ctx.fillStyle=h.color||'#c8a84b'; ctx.fill();
+    if(h.label){
+      ctx.fillStyle='#000'; ctx.font='bold 8px IBM Plex Mono';
+      ctx.textAlign='center'; ctx.fillText(h.label,x,y+3);
+    }
+  });
+
+  // tap handler
+  canvas.ontouchstart=null; canvas.onclick=null;
+  if(interactive && onTap){
+    const handler=e=>{
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+      const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;
+      const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;
+      const col=Math.round((px-LEFT_PAD)/CW);
+      const str=5-Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);
+      if(col>=0&&col<fc&&str>=0&&str<6) onTap(str, fm+col);
+    };
+    canvas.ontouchstart=handler; canvas.onclick=handler;
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+let correct=0, total=0, dots=[];
+
+function ntGetBest(){ try{return parseInt(localStorage.getItem('sfb_best')||'0');}catch(e){return 0;} }
+function ntSaveBest(v){ try{localStorage.setItem('sfb_best',v);}catch(e){} }
+
+function updateStats(){
+  document.getElementById('nt-h-correct').textContent=correct;
+  let s=0; for(let i=dots.length-1;i>=0;i--){ if(dots[i])s++; else break; }
+  document.getElementById('nt-h-streak').textContent=s;
+  const best=ntGetBest();
+  if(s>0&&s>best){ ntSaveBest(s); }
+  const bestEl=document.getElementById('nt-h-best');
+  const newBest=ntGetBest();
+  bestEl.textContent=newBest||'—';
+  document.getElementById('nt-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';
+  document.getElementById('nt-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');
+}
+
+function setFb(msg,cls){
+  const el=document.getElementById('nt-feedback');
+  el.textContent=msg;
+  el.className='feedback-line'+(cls?' '+cls:'');
+}
+
+// ── REVEAL CORRECT POSITIONS ──────────────────────────────────────────────────
+function revealPositions(){
+  const hl = q.positions
+    .filter(p=>p.f<=maxFret)
+    .map(p=>({s:p.s, f:p.f, color:'#7fbfb0', label:q.name}));
+  drawNeck(hl, false, null);
+  document.getElementById('nt-answer-hint').textContent =
+    'Valid: '+q.positions.filter(p=>p.f<=maxFret).map(p=>'S'+(p.s+1)+' fret '+p.f).join('  ·  ');
+}
+
+// ── HANDLE TAP ON NECK ────────────────────────────────────────────────────────
+function handleTap(s, f){
+  if(answered) return;
+  answered = true;
+  stopTimer();
+  total++;
+
+  // Check if tapped position produces the correct sounding pitch
+  const sm = soundingMidi(s, f);
+  const hit = q.positions.some(p => soundingMidi(p.s, p.f) === sm);
+
+  srRecord(q.writtenMidi, hit);
+
+  if(hit){
+    correct++; dots.push(true);
+    tFrac = Math.max(0, tFrac - REWARD);
+    onHit();
+    drawNeck([{s,f,color:'#7fbfb0',label:q.name}], false, null);
+    drawStaff(q, true);
+    setFb('Correct','');
+    document.getElementById('nt-answer-hint').textContent='';
+    updateStats();
+    setTimeout(next, 800);
+  } else {
+    dots.push(false);
+    onMiss();
+    // Show tapped note in red, correct in teal
+    const wrongLabel = midiToNoteName(writtenMidi(s,f));
+    const hl = [{s,f,color:'#c85c5c',label:wrongLabel}];
+    if(document.getElementById('nt-cfg-reveal').checked){
+      q.positions.filter(p=>p.f<=maxFret).forEach(p=>{
+        hl.push({s:p.s,f:p.f,color:'#7fbfb0',label:q.name});
+      });
+      document.getElementById('nt-answer-hint').textContent =
+        'Was: '+q.positions.filter(p=>p.f<=maxFret).map(p=>'S'+(p.s+1)+' fret '+p.f).join('  ·  ');
+    }
+    drawNeck(hl, false, null);
+    drawStaff(q, true);
+    setFb('Wrong — '+q.name+q.octave,'wrong');
+    updateStats();
+    setTimeout(next, 1500);
+  }
+}
+
+// ── NEXT QUESTION ─────────────────────────────────────────────────────────────
+function next(){
+  answered = false;
+  setFb('','');
+  document.getElementById('nt-answer-hint').textContent='';
+  q = pick();
+  drawStaff(q, false);
+  document.getElementById('nt-note-name-badge').textContent =
+    document.getElementById('nt-cfg-show-name').checked ? q.name+q.octave : '?';
+  document.getElementById('nt-octave-badge').textContent='';
+  drawNeck([], true, handleTap);
+  startTimer();
+}
+
+function redraw(){
+  if(q) drawStaff(q, answered);
+  if(q) document.getElementById('nt-note-name-badge').textContent =
+    document.getElementById('nt-cfg-show-name').checked ? q.name+q.octave : (answered?q.name+q.octave:'?');
+}
+
+// ── CONFIG / SETTINGS ─────────────────────────────────────────────────────────
+function toggleCfg(){
+  const p=document.getElementById('nt-cfg-panel');
+  const b=document.getElementById('nt-cfg-btn');
+  const o=p.classList.toggle('open');
+  b.textContent=o?'Settings ▲':'Settings ▾';
+  if(o) stopTimer();
+  else if(!answered) startTimer();
+}
+
+function setSpeed(btn){
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  DRAIN_S=parseFloat(btn.dataset.s);
+}
+
+function resetAll(){
+  correct=0; total=0; dots=[]; srData={}; deck=[]; deckPos=0; deckCount=0; lastCards=[];
+  maxFret=0; progHits=0; progMisses=0;
+  updateStats(); updateProgUI(); next();
+}
+
+function resetBest(){
+  ntSaveBest(0); document.getElementById('nt-h-best').textContent='—';
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _toastT=null;
+function showToast(title,body){
+  const t=document.getElementById('unlock-toast');
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-body').textContent=body;
+  t.classList.add('show');
+  if(_toastT) clearTimeout(_toastT);
+  _toastT=setTimeout(()=>t.classList.remove('show'),800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+
+  function setUnlockNeeded(v){ UNLOCK_NEEDED=v; updateProgUI(); }
+  function setDropNeeded(v){ DROP_NEEDED=v; updateProgUI(); }
+
+  return{
+    startTimer, stopTimer, redraw, toggleCfg, setSpeed, resetAll, resetBest,
+    setUnlockNeeded, setDropNeeded,
+    init(){
+      document.getElementById('nt-h-best').textContent = ntGetBest()||'—';
+      updateProgUI(); next();
+    }
+  };
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 TR.init();
 DI.init();
 GN.init();
 SN.init();
+NT.init();
 rotationTimer.onSwitch('triads');
+
+// ── VISIBILITY: pause everything when tab/window is hidden ───────────────────
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    TR.stopTimer(); DI.stopTimer(); GN._stopProg(); SN._stopProg(); NT.stopTimer();
+  } else {
+    if(_currentApp==='triads'&&!TR.answered) TR.startTimer();
+    if(_currentApp==='diatonic'&&!DI.answered) DI.startTimer();
+    if(_currentApp==='guitar') GN._startProg();
+    if(_currentApp==='steel')  SN._startProg();
+    if(_currentApp==='notation') NT.startTimer();
+  }
+});
 </script>
 </body>
 </html>
