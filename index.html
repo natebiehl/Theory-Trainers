@@ -261,7 +261,10 @@ canvas{display:block;}
   padding:14px 12px 12px;display:flex;flex-direction:column;gap:10px;align-items:center;}
 .staff-card-meta{width:100%;display:flex;justify-content:space-between;align-items:center;}
 .note-name-badge{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
-  border:1px solid var(--dim);border-radius:2px;padding:2px 7px;min-width:60px;text-align:center;}
+  border:1px solid var(--dim);border-radius:2px;padding:2px 7px;min-width:60px;text-align:center;
+  cursor:pointer;background:transparent;font-family:'IBM Plex Mono',monospace;transition:border-color .15s,color .15s;}
+.note-name-badge.hint-on{border-color:var(--accent);color:var(--accent);}
+.note-name-badge:hover{border-color:var(--muted);}
 .octave-badge{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
 .staff-svg-wrap{background:var(--panel2);border:1px solid var(--border);border-radius:3px;
   padding:8px 4px;display:flex;justify-content:center;width:100%;}
@@ -651,7 +654,7 @@ canvas{display:block;}
 
   <div class="staff-card">
     <div class="staff-card-meta">
-      <span class="note-name-badge" id="nt-note-name-badge">—</span>
+      <button class="note-name-badge" id="nt-note-name-badge" onclick="NT.toggleNameHint()" title="Toggle note name hint">—</button>
       <span class="octave-badge" id="nt-octave-badge"></span>
     </div>
     <div class="staff-svg-wrap">
@@ -685,7 +688,7 @@ canvas{display:block;}
     <div class="config-section">
       <div class="config-title">Display</div>
       <div class="cfg-row"><label>Show note name on staff card</label>
-        <label class="toggle"><input type="checkbox" id="nt-cfg-show-name" checked onchange="NT.redrawStaff()">
+        <label class="toggle"><input type="checkbox" id="nt-cfg-show-name" checked onchange="NT.redraw()">
         <span class="toggle-slider"></span></label>
       </div>
       <div class="cfg-row"><label>Reveal all positions after wrong</label>
@@ -2166,12 +2169,21 @@ function showToast(title,body){
 
   function setUnlockNeeded(v){ UNLOCK_NEEDED=v; updateProgUI(); }
   function setDropNeeded(v){ DROP_NEEDED=v; updateProgUI(); }
+  function toggleNameHint(){
+    const cb=document.getElementById('nt-cfg-show-name');
+    cb.checked=!cb.checked;
+    const btn=document.getElementById('nt-note-name-badge');
+    btn.classList.toggle('hint-on', cb.checked);
+    redraw();
+  }
 
   return{
     startTimer, stopTimer, redraw, toggleCfg, setSpeed, resetAll, resetBest,
-    setUnlockNeeded, setDropNeeded,
+    setUnlockNeeded, setDropNeeded, toggleNameHint,
     init(){
       document.getElementById('nt-h-best').textContent = ntGetBest()||'—';
+      const cb=document.getElementById('nt-cfg-show-name');
+      document.getElementById('nt-note-name-badge').classList.toggle('hint-on', cb.checked);
       updateProgUI(); next();
     }
   };
