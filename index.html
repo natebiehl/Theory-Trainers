@@ -1037,6 +1037,7 @@ const DI=(()=>{
   // SR deck — same nextDeck model as GN/TR
   const DI_SR_FREQ=[1,1,2,4,8];
   let diSR={},diDeckCount=0,diDeck=[],diDeckPos=0,diLastCards=[];
+  let diGridOrder={nat:['C','D','E','F','G','A','B'],acc_sharp:['C#','D#','F#','G#','A#'],acc_flat:['Db','Eb','Gb','Ab','Bb']};
   function diKey(key,di){return key+'|'+di;}
   function diSRGet(k){if(!diSR[k])diSR[k]={correct:0,total:0,nextDeck:0};return diSR[k];}
   function diSRRecord(k,hit){const d=diSRGet(k);d.total++;if(hit)d.correct++;}
@@ -1069,6 +1070,11 @@ const DI=(()=>{
     // shuffle
     for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}
     diDeck=candidates;diDeckPos=0;diDeckCount++;
+    // Reshuffle button order once per deck cycle
+    diGridOrder.nat=['C','D','E','F','G','A','B'];
+    diGridOrder.acc_sharp=['C#','D#','F#','G#','A#'];
+    diGridOrder.acc_flat=['Db','Eb','Gb','Ab','Bb'];
+    for(let a of[diGridOrder.nat,diGridOrder.acc_sharp,diGridOrder.acc_flat]){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
   }
   function diDrawCard(){if(diDeckPos>=diDeck.length)diBuildDeck();return diDeck[diDeckPos++];}
 
@@ -1096,7 +1102,7 @@ const DI=(()=>{
   function drawQ(cq,revealed){const showQ=document.getElementById('d-show-quality').checked;const showC=document.getElementById('d-show-chips').checked;const showN=document.getElementById('d-show-name').checked;document.getElementById('d-key').textContent=nd(cq.key,cq.key);document.getElementById('d-degree').innerHTML='What is the <strong>'+cq.degree.num+'</strong> chord?';const qb=document.getElementById('d-quality-badge');if(showQ){qb.textContent=cq.degree.quality.charAt(0).toUpperCase()+cq.degree.quality.slice(1);qb.className='quality-badge '+cq.degree.quality;qb.style.display='inline-block';}else qb.style.display='none';const cn=document.getElementById('d-chord-name');if(revealed&&showN){const qs={major:'',minor:'m',dim:'°'};cn.textContent=cq.correctNote+(qs[cq.degree.quality]||'');}else cn.textContent='';const ch=document.getElementById('d-degree-chips');if(showC){ch.style.display='flex';ch.innerHTML=D_TIERS[tier].degrees.map(i=>{const d=DIAT[i];return`<span class="degree-chip ${i===cq.di?'current':'unlocked'}">${d.num}</span>`;}).join('');}else ch.style.display='none';}
   function revealQ(){drawQ(q,true);document.querySelectorAll('#d-note-grid .note-btn').forEach(b=>{if(nIdx(b.dataset.note)===nIdx(q.correctNote))b.classList.add('correct');});}
 
-  function buildGrid(key){const grid=document.getElementById('d-note-grid');grid.innerHTML='';const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);const nat=['C','D','E','F','G','A','B'];const acc=uf?['Db','Eb','Gb','Ab','Bb']:['C#','D#','F#','G#','A#'];[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
+  function buildGrid(key){const grid=document.getElementById('d-note-grid');grid.innerHTML='';const uf=FLAT_ROOTS.has(TO_SHARP[key]||key)||FLAT_ROOTS.has(key);const nat=diGridOrder.nat;const acc=uf?diGridOrder.acc_flat:diGridOrder.acc_sharp;[...nat,...acc].forEach(note=>{const btn=document.createElement('button');btn.className='note-btn';btn.textContent=note;btn.dataset.note=note;btn.onclick=()=>handleAnswer(note,btn);grid.appendChild(btn);});}
   function handleAnswer(note,btn){if(answered)return;answered=true;stopTimer();total++;const hit=nIdx(note)===nIdx(q.correctNote);diSRRecord(q._k,hit);if(hit){correct++;dots.push(true);btn.classList.add('correct');onHit();setFb('Correct','');revealQ();updateStats();setTimeout(next,800);}else{dots.push(false);btn.classList.add('wrong');onMiss();revealQ();setFb('Wrong — '+q.correctNote,'wrong');updateStats();setTimeout(next,1400);}}
 
   function next(){answered=false;setFb('','');q=pick();tFrac=1;renderTimer();buildGrid(q.key);drawQ(q,false);startTimer();}
@@ -1839,6 +1845,8 @@ function onTimeout(){
   if(answered) return;
   total++; dots.push(false);
   onMiss(); srRecord(q.writtenMidi, false);
+  document.getElementById('nt-note-name-badge').textContent=q.name+q.octave;
+  document.getElementById('nt-note-name-badge').classList.remove('hint-on');
   setFb('Time — '+q.name+q.octave, 'wrong');
   if(document.getElementById('nt-cfg-reveal').checked) revealPositions();
   updateStats();
@@ -1982,7 +1990,7 @@ function drawNeck(highlights, interactive, onTap){
 
   // fret numbers
   for(let i=0;i<fc;i++){
-    const f=fm+i, x=LEFT_PAD+i*CW;
+    const f=fm+i, x=LEFT_PAD+(i+0.5)*CW;
     ctx.fillStyle='rgba(200,168,75,0.55)';
     ctx.font='9px IBM Plex Mono'; ctx.textAlign='center';
     ctx.fillText(f===0?'0':f, x, 14);
@@ -2001,7 +2009,7 @@ function drawNeck(highlights, interactive, onTap){
   // highlights
   (highlights||[]).forEach(h=>{
     if(h.f > maxFret) return;
-    const x=LEFT_PAD+(h.f-fm)*CW;
+    const x=LEFT_PAD+(h.f-fm+0.5)*CW;
     const y=TOP_PAD+(5-h.s)*ROW_H+ROW_H/2;
     ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
     ctx.fillStyle=h.color||'#c8a84b'; ctx.fill();
@@ -2020,7 +2028,7 @@ function drawNeck(highlights, interactive, onTap){
       const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
       const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;
       const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;
-      const col=Math.round((px-LEFT_PAD)/CW);
+      const col=Math.floor((px-LEFT_PAD)/CW);
       const str=5-Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);
       if(col>=0&&col<fc&&str>=0&&str<6) onTap(str, fm+col);
     };
@@ -2082,6 +2090,8 @@ function handleTap(s, f){
     onHit();
     drawNeck([{s,f,color:'#7fbfb0',label:q.name}], false, null);
     drawStaff(q, true);
+    document.getElementById('nt-note-name-badge').textContent=q.name+q.octave;
+    document.getElementById('nt-note-name-badge').classList.remove('hint-on');
     setFb('Correct','');
     document.getElementById('nt-answer-hint').textContent='';
     updateStats();
@@ -2101,6 +2111,8 @@ function handleTap(s, f){
     }
     drawNeck(hl, false, null);
     drawStaff(q, true);
+    document.getElementById('nt-note-name-badge').textContent=q.name+q.octave;
+    document.getElementById('nt-note-name-badge').classList.remove('hint-on');
     setFb('Wrong — '+q.name+q.octave,'wrong');
     updateStats();
     setTimeout(next, 1500);
@@ -2123,8 +2135,12 @@ function next(){
 
 function redraw(){
   if(q) drawStaff(q, answered);
-  if(q) document.getElementById('nt-note-name-badge').textContent =
-    document.getElementById('nt-cfg-show-name').checked ? q.name+q.octave : (answered?q.name+q.octave:'?');
+  if(q){
+    const _showN=document.getElementById('nt-cfg-show-name').checked;
+    const _b=document.getElementById('nt-note-name-badge');
+    _b.textContent = (_showN||answered) ? q.name+q.octave : '?';
+    _b.classList.toggle('hint-on',_showN&&!answered);
+  }
 }
 
 // ── CONFIG / SETTINGS ─────────────────────────────────────────────────────────
