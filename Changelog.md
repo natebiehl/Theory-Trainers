@@ -1,3 +1,31 @@
+[2026-03-19 · 00:10 UTC]
+Added
+
+Circle of 5ths tab (6th module) with 5-tier progression
+
+Tier 1: circle navigation — 5th above, 4th above, identify highlighted key
+Tier 2: accidental counts in both directions
+Tier 3: name accidentals in order, name the last accidental added
+Tier 4: reverse lookup — identify key from accidental count or specific list
+Tier 5: relative minors, both directions
+
+
+Circle: tappable SVG-style canvas showing all 12 positions with active/inactive states and accidental count hints
+Circle: SR + unlock progression starting from C/G/F, expanding outward symmetrically (C→G+F→D+Bb→A+Eb→E+Ab→B+Db→F#), tiers 2–5 unlock as key pool grows
+Circle: per-card timer (15s default), 12 hits to unlock, 5 misses to drop
+Circle: 5th-above and 4th-above questions highlight the answer node as a muted ? so spatial context is visible without revealing the answer
+
+Changed
+
+Triads: white-key unlock order randomized on every session start and reset — begins on 1 random white key, unlocks remaining 6 in a new random sequence each time; accidentals remain in fixed order at the end
+Nashville Numbers: button layout shuffles once per deck cycle to prevent positional memory replacing actual recall
+Notation: note name badge now shows ? until the player answers — was incorrectly revealing the answer on card load
+Notation: fret 0 tap detection fixed — Math.round replaced with Math.floor for column calculation, eliminating dead zone across right half of the (wide) open-string fret cell
+Notation: NT.redrawStaff reference error fixed — settings checkbox now correctly calls NT.redraw()
+All modules: unlock toast repositioned to top banner (was center-screen), duration reduced to 800ms, layout changed to single horizontal row
+All modules: timers and progression drain now pause on browser tab switch and window hide via visibilitychange
+Guitar/Steel: progression timer stops when switching away from those tabs, resumes on return
+
 ## [2026-03-12 · 14:00 MDT]
 
 ### Added
