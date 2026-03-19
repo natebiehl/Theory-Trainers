@@ -272,13 +272,44 @@ canvas{display:block;}
 .answer-hint{font-size:9px;letter-spacing:1px;color:var(--muted);text-align:center;
   text-transform:uppercase;height:14px;transition:opacity .2s;}
 .nt-neck-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+
+/* ── CIRCLE MODULE ── */
+.q-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:14px 12px 12px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.q-tier-badge{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  border:1px solid var(--dim);border-radius:2px;padding:2px 8px;align-self:flex-start;}
+.q-tier-badge.t1{border-color:rgba(200,168,75,0.3);color:var(--accent);}
+.q-tier-badge.t2{border-color:rgba(127,191,176,0.3);color:var(--teal);}
+.q-tier-badge.t3{border-color:rgba(200,92,92,0.3);color:var(--wrong);}
+.q-tier-badge.t4{border-color:rgba(155,127,200,0.3);color:#9b7fc8;}
+.q-tier-badge.t5{border-color:rgba(100,180,100,0.3);color:#64b464;}
+.q-prompt{font-size:13px;letter-spacing:.5px;color:var(--text);text-align:center;line-height:1.7;width:100%;}
+.q-prompt strong{color:var(--accent);font-size:17px;letter-spacing:1px;}
+.q-prompt em{color:var(--teal);font-style:normal;font-size:15px;}
+.co-circle-wrap{width:100%;display:flex;justify-content:center;
+  background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;}
+canvas#co-circle-canvas{display:block;touch-action:none;}
+.co-keysig-display{font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:3px;
+  color:var(--accent);text-align:center;min-height:32px;padding:4px 0;}
+.co-keysig-acc{font-size:10px;color:var(--teal);letter-spacing:2px;text-align:center;
+  min-height:18px;text-transform:uppercase;}
+.co-ans-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.co-ans-grid{display:grid;gap:6px;}
+.co-ans-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:11px 6px;border-radius:3px;
+  cursor:pointer;transition:background .12s,border-color .12s;letter-spacing:1px;text-align:center;}
+.co-ans-btn:active{transform:scale(.96);}
+.co-ans-btn.correct{background:var(--teal);border-color:var(--teal);color:#000;}
+.co-ans-btn.wrong{background:var(--wrong);border-color:var(--wrong);color:#fff;}
+.ut-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent);letter-spacing:2px;white-space:nowrap;}
+.ut-body{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
 </style>
 </head>
 <body>
 
 <div class="app-title-bar">
   <span class="app-title">NKB Trainer</span>
-  <span class="app-build">2026-03-15 · 12:00 MDT</span>
+  <span class="app-build">2026-03-19 · 00:10 UTC</span>
 </div>
 
 <div class="app-nav">
@@ -287,6 +318,7 @@ canvas{display:block;}
   <button class="app-tab" onclick="switchApp('guitar')">Guitar</button>
   <button class="app-tab" onclick="switchApp('steel')">Steel</button>
   <button class="app-tab" onclick="switchApp('notation')">Notation</button>
+  <button class="app-tab" onclick="switchApp('circle')">Circle</button>
 </div>
 
 <!-- ══ APP 1: MISSING NOTE ══ -->
@@ -716,6 +748,79 @@ canvas{display:block;}
 </div>
 </div>
 
+<!-- ══ APP 6: CIRCLE OF 5THS ══ -->
+<div class="app-screen" id="app-circle">
+<div class="t-header">
+  <div class="t-header-left">
+    <span class="t-h1">Circle</span>
+    <span class="t-hsub" id="co-hdr-sub">Tier 1 · C G F</span>
+  </div>
+  <div class="t-hstats">
+    <div style="text-align:center"><div class="t-hstat-val" id="co-h-correct">0</div><div class="t-hstat-lbl">Correct</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="co-h-streak">0</div><div class="t-hstat-lbl">Streak</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="co-h-best">—</div><div class="t-hstat-lbl">Best</div></div>
+    <div style="text-align:center"><div class="t-hstat-val" id="co-h-pct">—</div><div class="t-hstat-lbl">Acc</div></div>
+  </div>
+</div>
+
+<div class="t-main">
+  <div class="prog-section">
+    <div class="prog-top">
+      <span class="prog-label" id="co-prog-label">Unlock next</span>
+      <span class="prog-counter" id="co-prog-counter">0 / 12</span>
+    </div>
+    <div class="prog-bar-track"><div class="prog-bar-fill" id="co-prog-fill" style="width:0%"></div></div>
+    <div class="prog-warning" id="co-prog-warn"></div>
+  </div>
+
+  <div class="timer-track"><div class="timer-fill" id="co-timer-fill" style="width:100%;background:var(--teal);"></div></div>
+
+  <div class="q-card">
+    <span class="q-tier-badge t1" id="co-tier-badge">Tier 1 · Navigation</span>
+    <div class="q-prompt" id="co-q-prompt">Loading…</div>
+    <div class="co-keysig-display" id="co-keysig-display"></div>
+    <div class="co-keysig-acc" id="co-keysig-acc"></div>
+    <div class="co-circle-wrap" id="co-circle-wrap" style="display:none;">
+      <canvas id="co-circle-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="feedback-line" id="co-feedback"></div>
+  <div class="streak-row" id="co-streak-row"></div>
+
+  <div id="co-ans-section">
+    <div class="co-ans-label" id="co-ans-label">Choose the answer</div>
+    <div class="co-ans-grid" id="co-ans-grid" style="margin-top:6px;"></div>
+  </div>
+
+  <button class="t-btn" id="co-cfg-btn" onclick="CO.toggleCfg()">Settings ▾</button>
+  <div class="cfg-panel" id="co-cfg-panel">
+    <div class="config-section">
+      <div class="config-title">Timer Speed</div>
+      <div class="speed-grid">
+        <button class="speed-btn" data-s="25" onclick="CO.setSpeed(this)">Slow</button>
+        <button class="speed-btn on" data-s="15" onclick="CO.setSpeed(this)">Normal</button>
+        <button class="speed-btn" data-s="8" onclick="CO.setSpeed(this)">Fast</button>
+        <button class="speed-btn" data-s="4" onclick="CO.setSpeed(this)">Brutal</button>
+      </div>
+    </div>
+    <div class="config-section">
+      <div class="config-title">Progression</div>
+      <div class="cfg-row"><label>Hits to unlock</label>
+        <span style="font-size:13px;color:var(--accent);" id="co-unlock-val">12</span></div>
+      <input type="range" min="4" max="30" value="12" style="width:100%;accent-color:var(--accent);margin-top:4px;"
+        oninput="document.getElementById('unlock-val').textContent=this.value;UNLOCK_NEEDED=parseInt(this.value);updateProgUI();">
+      <div class="cfg-row" style="margin-top:8px;"><label>Misses to drop</label>
+        <span style="font-size:13px;color:var(--accent);" id="co-drop-val">5</span></div>
+      <input type="range" min="1" max="10" value="5" style="width:100%;accent-color:var(--accent);margin-top:4px;"
+        oninput="document.getElementById('drop-val').textContent=this.value;DROP_NEEDED=parseInt(this.value);updateProgUI();">
+    </div>
+    <button class="t-btn" onclick="CO.resetAll()">Reset Progress</button>
+    <button class="t-btn subdued" style="margin-top:4px;" onclick="CO.resetBest()">Reset Best Streak</button>
+  </div>
+</div>
+</div>
+
 <div class="unlock-toast" id="unlock-toast">
   <div class="unlock-toast-title" id="toast-title">Unlocked!</div>
   <div class="unlock-toast-body" id="toast-body"></div>
@@ -830,7 +935,7 @@ let _currentApp='triads';
 function switchApp(name){
   _currentApp=name;
   document.querySelectorAll('.app-tab').forEach((b,i)=>
-    b.classList.toggle('active',['triads','diatonic','guitar','steel','notation'][i]===name));
+    b.classList.toggle('active',['triads','diatonic','guitar','steel','notation','circle'][i]===name));
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('app-'+name).classList.add('active');
   if(name==='triads'){ TR.stopTimer(); if(!TR.answered) TR.startTimer(); DI.stopTimer(); }
@@ -839,6 +944,7 @@ function switchApp(name){
   if(name==='guitar'){GN._startProg();setTimeout(()=>GN.redrawCurrent(),50);}else GN._stopProg();
   if(name==='steel'){SN._startProg();setTimeout(()=>SN.redrawCurrent(),50);}else SN._stopProg();
   if(name==='notation'){NT.startTimer();setTimeout(()=>NT.redraw(),50);}else NT.stopTimer();
+  if(name==='circle'){CO.startTimer();}else CO.stopTimer();
   rotationTimer.onSwitch(name);
 }
 
@@ -847,8 +953,8 @@ function switchApp(name){
 // suggesting a switch. Resets when the user actually switches.
 const rotationTimer=(()=>{
   const REMIND_MS=15*60*1000;
-  const NAMES={triads:'Triads',diatonic:'Nashville #s',guitar:'Guitar Neck',steel:'Steel Neck',notation:'Notation'};
-  const OTHERS={triads:['Nashville #s','Guitar Neck','Steel Neck','Notation'],diatonic:['Triads','Guitar Neck','Steel Neck','Notation'],guitar:['Triads','Nashville #s','Steel Neck','Notation'],steel:['Triads','Nashville #s','Guitar Neck','Notation'],notation:['Triads','Nashville #s','Guitar Neck','Steel Neck']};
+  const NAMES={triads:'Triads',diatonic:'Nashville #s',guitar:'Guitar Neck',steel:'Steel Neck',notation:'Notation',circle:'Circle of 5ths'};
+  const OTHERS={triads:['Nashville #s','Guitar Neck','Steel Neck','Notation','Circle'],diatonic:['Triads','Guitar Neck','Steel Neck','Notation','Circle'],guitar:['Triads','Nashville #s','Steel Neck','Notation','Circle'],steel:['Triads','Nashville #s','Guitar Neck','Notation','Circle'],notation:['Triads','Nashville #s','Guitar Neck','Steel Neck','Circle'],circle:['Triads','Nashville #s','Guitar Neck','Steel Neck','Notation']};
   let current=null,elapsed=0,lastTick=null,raf=null,fired=false;
 
   function tick(now){
@@ -903,8 +1009,9 @@ const TR=(()=>{
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
   // White keys first, then accidentals — this is the unlock progression order
-  function genPool(){
-    const roots=['C','D','E','F','G','A','B','F#','Bb','Eb','Ab','Db'];
+  function genPool(whiteOrder){
+    const whites=whiteOrder||['C','D','E','F','G','A','B'];
+    const roots=[...whites,'F#','Bb','Eb','Ab','Db'];
     const phases=[{type:'major',inv:0},{type:'minor',inv:0},{type:'dim',inv:0},{type:'aug',inv:0},
                   {type:'major',inv:1},{type:'minor',inv:1},{type:'major',inv:2},{type:'minor',inv:2},
                   {type:'dim',inv:1},{type:'aug',inv:1},{type:'dim',inv:2},{type:'aug',inv:2}];
@@ -912,7 +1019,9 @@ const TR=(()=>{
     for(const p of phases) for(const r of roots) o.push({root:r,...p});
     return o;
   }
-  const MASTER=genPool();
+  function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+  function newMaster(){return genPool(shuffleArr(['C','D','E','F','G','A','B']));}
+  let MASTER=newMaster();
 
   let UNLOCK_NEEDED=5,DROP_NEEDED=3,TIMER_S=9;
   let unlocked=1,progHits=0,progMisses=0;
@@ -1010,7 +1119,7 @@ const TR=(()=>{
   function toggleInv(btn){const i=parseInt(btn.dataset.i);if(aInv.has(i)){if(aInv.size>1){aInv.delete(i);btn.classList.remove('on');}}else{aInv.add(i);btn.classList.add('on');}}
   function setSpeed(btn){document.querySelectorAll('#tr-cfg-panel .speed-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');TIMER_S=parseFloat(btn.dataset.s);}
   function redraw(){if(q)drawQ(q,answered);}
-  function resetAll(){correct=0;total=0;dots=[];unlocked=1;progHits=0;progMisses=0;trSR={};trDeck=[];trDeckPos=0;trDeckCount=0;trLastCards=[];updateStats();updateProgUI();next();}
+  function resetAll(){correct=0;total=0;dots=[];MASTER=newMaster();unlocked=1;progHits=0;progMisses=0;trSR={};trDeck=[];trDeckPos=0;trDeckCount=0;trLastCards=[];updateStats();updateProgUI();next();}
   function resetBest(){HS.reset('triads');document.getElementById('tr-h-best').textContent='—';}
 
   return{startTimer,stopTimer,toggleCfg,toggleType,togglePos,toggleInv,setSpeed,redraw,resetAll,resetBest,
@@ -2180,6 +2289,699 @@ function showToast(title,body){
   _toastT=setTimeout(()=>t.classList.remove('show'),800);
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CIRCLE OF 5THS — CO
+// ══════════════════════════════════════════════════════════════════════════════
+const CO=(()=>{
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MUSIC DATA
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Circle order clockwise, index 0 = C (top)
+const CIRCLE = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
+// Display labels (enharmonic pairs shown for ambiguous positions)
+const CIRCLE_DISPLAY = ['C','G','D','A','E','B','F#/Gb','Db/C#','Ab','Eb','Bb','F'];
+
+const KEY_TYPE = {C:'none',G:'sharp',D:'sharp',A:'sharp',E:'sharp',B:'sharp','F#':'sharp',
+                  Db:'flat',Ab:'flat',Eb:'flat',Bb:'flat',F:'flat',Gb:'flat'};
+
+const KEY_ACCIDENTALS = {
+  C:[],
+  G:['F#'],
+  D:['F#','C#'],
+  A:['F#','C#','G#'],
+  E:['F#','C#','G#','D#'],
+  B:['F#','C#','G#','D#','A#'],
+  'F#':['F#','C#','G#','D#','A#','E#'],
+  Db:['Bb','Eb','Ab','Db','Gb'],
+  Ab:['Bb','Eb','Ab','Db'],
+  Eb:['Bb','Eb','Ab'],
+  Bb:['Bb','Eb'],
+  F:['Bb'],
+};
+
+const SHARPS_IN_ORDER = ['F#','C#','G#','D#','A#','E#','B#'];
+const FLATS_IN_ORDER  = ['Bb','Eb','Ab','Db','Gb','Cb','Fb'];
+
+const REL_MINOR = {C:'Am',G:'Em',D:'Bm',A:'F#m',E:'C#m',B:'G#m','F#':'D#m',
+                   Db:'Bbm',Ab:'Fm',Eb:'Cm',Bb:'Gm',F:'Dm'};
+const REL_MAJOR = {};
+Object.entries(REL_MINOR).forEach(([maj,min])=>{ REL_MAJOR[min]=maj; });
+const ALL_MINORS = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm'];
+
+// ── PROGRESSION STEPS ────────────────────────────────────────────────────────
+// Unlocks outward from C: C→G+F→D+Bb→A+Eb→E+Ab→B+Db→F#
+// Then tiers 2-5 unlock progressively
+const UNLOCK_STEPS = [
+  {keys:['C','G','F'],           tier:1, label:'C · G · F'},
+  {keys:['C','G','F','D','Bb'],  tier:1, label:'+ D · Bb'},
+  {keys:['C','G','F','D','Bb','A','Eb'], tier:1, label:'+ A · Eb'},
+  {keys:['C','G','F','D','Bb','A','Eb','E','Ab'], tier:2, label:'+ E · Ab — Tier 2 unlocked'},
+  {keys:['C','G','F','D','Bb','A','Eb','E','Ab','B','Db'], tier:2, label:'+ B · Db'},
+  {keys:[...CIRCLE], tier:3, label:'All 12 keys — Tier 3 unlocked'},
+  {keys:[...CIRCLE], tier:4, label:'Tier 4 — Reverse lookup'},
+  {keys:[...CIRCLE], tier:5, label:'Tier 5 — Relative minors'},
+];
+
+let currentStep=0, UNLOCK_NEEDED=12, DROP_NEEDED=5;
+let progHits=0, progMisses=0;
+
+function activeKeys(){ return UNLOCK_STEPS[currentStep].keys; }
+function activeTier(){ return UNLOCK_STEPS[currentStep].tier; }
+
+function updateProgUI(){
+  const atMax = currentStep >= UNLOCK_STEPS.length-1;
+  const next = UNLOCK_STEPS[Math.min(currentStep+1, UNLOCK_STEPS.length-1)];
+  document.getElementById('co-prog-label').textContent = atMax?'Full mastery!':'Unlock: '+next.label;
+  document.getElementById('co-prog-counter').textContent = atMax?'✓':progHits+' / '+UNLOCK_NEEDED;
+  document.getElementById('co-prog-fill').style.width = atMax?'100%':(progHits/UNLOCK_NEEDED*100)+'%';
+  document.getElementById('co-hdr-sub').textContent = 'Tier '+activeTier()+' · '+activeKeys().join(' ');
+  const w=document.getElementById('co-prog-warn');
+  if(progMisses===DROP_NEEDED-1&&currentStep>0){
+    w.textContent='⚠ One more miss drops back'; w.classList.add('show');
+  } else { w.textContent=''; w.classList.remove('show'); }
+}
+
+function onProgHit(){
+  progMisses=0;
+  tFrac=Math.min(1,tFrac+0.25);
+  progHits++;
+  if(progHits>=UNLOCK_NEEDED){
+    progHits=0;
+    if(currentStep<UNLOCK_STEPS.length-1){
+      currentStep++;
+      showToast('Unlocked',UNLOCK_STEPS[currentStep].label);
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-unlock');
+    }
+  }
+  updateProgUI();
+}
+
+function onProgMiss(){
+  progHits=0; progMisses++;
+  if(progMisses>=DROP_NEEDED){
+    progMisses=0;
+    if(currentStep>0){
+      currentStep--;
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-lock');
+    }
+  }
+  updateProgUI();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function coShuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+function without(a,v){return a.filter(x=>x!==v);}
+function circleIdx(k){return CIRCLE.indexOf(k);}
+function circleNext(k){return CIRCLE[(circleIdx(k)+1)%12];}
+function circlePrev(k){return CIRCLE[(circleIdx(k)+11)%12];}
+
+function makeChoices(correct, pool, n=5){
+  const wrong=coShuffle(without(pool,correct)).slice(0,n-1);
+  return coShuffle([correct,...wrong]);
+}
+
+function nearbyKeys(k,n){
+  const idx=circleIdx(k);
+  const out=[];
+  for(let d=1;d<=6&&out.length<n;d++){
+    out.push(CIRCLE[(idx+d)%12]);
+    if(out.length<n) out.push(CIRCLE[(idx+12-d)%12]);
+  }
+  return out.slice(0,n);
+}
+
+// ── QUESTION GENERATORS ───────────────────────────────────────────────────────
+// Each returns a question object or null if not applicable for given keys
+
+// T1: Navigation
+function gen_t1_next(keys){
+  const k=rnd(keys);
+  const correct=circleNext(k);
+  return {
+    tier:1, id:'t1_next_'+k,
+    prompt:`What key is a <strong>5th above</strong> <em>${k}</em>? (clockwise)`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:k},{idx:(circleIdx(k)+1)%12,color:'rgba(127,191,176,0.5)',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+function gen_t1_prev(keys){
+  const k=rnd(keys);
+  const correct=circlePrev(k);
+  return {
+    tier:1, id:'t1_prev_'+k,
+    prompt:`What key is a <strong>4th above</strong> <em>${k}</em>? (counter-clockwise)`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:k},{idx:(circleIdx(k)+11)%12,color:'rgba(127,191,176,0.5)',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+
+function gen_t1_identify(keys){
+  const k=rnd(keys);
+  return {
+    tier:1, id:'t1_id_'+k,
+    prompt:`What key is <strong>highlighted</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct:k, choices:makeChoices(k,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+// T2: Counts
+function gen_t2_howmany(keys){
+  const k=rnd(keys);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  const label=type==='none'?'accidentals':(type+'s');
+  const countStr=String(count);
+  // Build distractor counts
+  const pool=[...new Set([0,1,2,3,4,5,6,7].map(String))].filter(x=>x!==countStr);
+  const choices=coShuffle([countStr,...coShuffle(pool).slice(0,4)]);
+  return {
+    tier:2, id:'t2_count_'+k,
+    prompt:`How many <strong>${label}</strong> does <em>${k} major</em> have?`,
+    keysigDisplay:k,
+    keysigAcc:count===0?'no sharps or flats':(count+' '+(type==='sharp'?'sharp':'flat')+(count!==1?'s':'')),
+    correct:countStr, choices,
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t2_whichkey(keys){
+  // Given a count+type, name a key
+  const k=rnd(keys);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  if(type==='none'){
+    const correct='C';
+    if(!keys.includes(correct)) return null;
+    return {
+      tier:2, id:'t2_noacckey',
+      prompt:`Which active key has <strong>no sharps or flats</strong>?`,
+      keysigDisplay:'', keysigAcc:'',
+      correct, choices:makeChoices(correct,keys.length>=5?keys:CIRCLE,5),
+      showCircle:false, circleHL:[], tapCircle:false,
+    };
+  }
+  const typeLabel=type==='sharp'?`${count} sharp${count!==1?'s':''}` : `${count} flat${count!==1?'s':''}`;
+  // Find all active keys matching this count+type
+  const matches=keys.filter(x=>KEY_ACCIDENTALS[x].length===count&&KEY_TYPE[x]===type);
+  if(!matches.length) return null;
+  const correct=rnd(matches);
+  const pool=without(keys.length>=5?keys:CIRCLE, correct);
+  return {
+    tier:2, id:'t2_wk_'+count+type,
+    prompt:`Which key has <strong>${typeLabel}</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T3: Specific accidentals
+function gen_t3_listaccs(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0&&KEY_ACCIDENTALS[k].length<=5);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=accs.join(' ');
+  const type=KEY_TYPE[k];
+  const pool=type==='sharp'?SHARPS_IN_ORDER:FLATS_IN_ORDER;
+  const wrongs=new Set();
+  for(let i=0;i<40&&wrongs.size<3;i++){
+    const w=coShuffle(pool).slice(0,accs.length).join(' ');
+    if(w!==correct) wrongs.add(w);
+  }
+  if(accs.length>1) wrongs.add(accs.slice(0,-1).join(' '));
+  if(accs.length<pool.length) wrongs.add(pool.slice(0,accs.length+1).join(' '));
+  const choices=coShuffle([correct,...[...wrongs].slice(0,3)]);
+  return {
+    tier:3, id:'t3_list_'+k,
+    prompt:`Name the <strong>${type==='sharp'?'sharps':'flats'}</strong> in <em>${k} major</em> in order`,
+    keysigDisplay:k, keysigAcc:(type==='sharp'?'♯':'♭')+accs.length,
+    correct, choices,
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t3_lastacc(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=accs[accs.length-1];
+  const type=KEY_TYPE[k];
+  const pool=without(type==='sharp'?SHARPS_IN_ORDER:FLATS_IN_ORDER, correct);
+  return {
+    tier:3, id:'t3_last_'+k,
+    prompt:`What is the <strong>last ${type==='sharp'?'sharp':'flat'} added</strong> in <em>${k} major</em>?`,
+    keysigDisplay:k, keysigAcc:accs.length+' '+(type==='sharp'?'sharp':'flat')+(accs.length!==1?'s':''),
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T4: Reverse lookup
+function gen_t4_fromcount(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  const typeLabel=type==='sharp'?`${count} sharp${count!==1?'s':''}` : `${count} flat${count!==1?'s':''}`;
+  const correct=k;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:4, id:'t4_fc_'+k,
+    prompt:`A major key has <strong>${typeLabel}</strong>. Which key?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t4_fromlist(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>=1&&KEY_ACCIDENTALS[k].length<=4);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=k;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:4, id:'t4_fl_'+k,
+    prompt:`Key signature: <em>${accs.join('  ')}</em>. What major key?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T5: Relative minors
+function gen_t5_relmin(keys){
+  const k=rnd(keys);
+  const correct=REL_MINOR[k];
+  if(!correct) return null;
+  const pool=without(ALL_MINORS,correct);
+  return {
+    tier:5, id:'t5_rm_'+k,
+    prompt:`What is the <strong>relative minor</strong> of <em>${k} major</em>?`,
+    keysigDisplay:k, keysigAcc:'relative minor shares key signature',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t5_relmaj(keys){
+  const eligible=keys.map(k=>REL_MINOR[k]).filter(Boolean);
+  if(!eligible.length) return null;
+  const minor=rnd(eligible);
+  const correct=REL_MAJOR[minor];
+  if(!correct) return null;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:5, id:'t5_rmaj_'+minor,
+    prompt:`<em>${minor}</em> is the relative minor of which <strong>major key</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// Generator registry by tier
+const GENERATORS = {
+  1:[gen_t1_next, gen_t1_prev, gen_t1_identify],
+  2:[gen_t2_howmany, gen_t2_whichkey],
+  3:[gen_t3_listaccs, gen_t3_lastacc],
+  4:[gen_t4_fromcount, gen_t4_fromlist],
+  5:[gen_t5_relmin, gen_t5_relmaj],
+};
+
+// ── SR DECK ───────────────────────────────────────────────────────────────────
+const SR_FREQ=[1,1,2,4,8];
+let srData={}, deckCount=0, deck=[], deckPos=0, lastCards=[];
+
+function srGet(id){if(!srData[id])srData[id]={correct:0,total:0,nextDeck:0};return srData[id];}
+function srRecord(id,hit){const d=srGet(id);d.total++;if(hit)d.correct++;}
+function srTier(id){
+  const d=srGet(id);if(d.total===0)return 0;
+  const acc=d.correct/d.total;
+  if(acc<0.5)return 1;if(acc<0.75)return 2;if(acc<0.9)return 3;
+  return d.total>=3?4:3;
+}
+
+function buildDeck(){
+  const keys=activeKeys(), tier=activeTier();
+  const candidates=[];
+  for(let t=1;t<=tier;t++){
+    for(const gen of (GENERATORS[t]||[])){
+      for(const k of keys){
+        const id=`${gen.name}_${k}`;
+        const d=srGet(id);
+        if(deckCount>=d.nextDeck){
+          candidates.push({gen,k,id});
+          d.nextDeck=deckCount+SR_FREQ[srTier(id)];
+        }
+      }
+    }
+  }
+  if(!candidates.length){
+    for(let t=1;t<=tier;t++){
+      for(const gen of (GENERATORS[t]||[])){
+        for(const k of keys){
+          const id=`${gen.name}_${k}`;
+          const d=srGet(id);
+          candidates.push({gen,k,id});
+          d.nextDeck=deckCount+SR_FREQ[srTier(id)];
+        }
+      }
+    }
+  }
+  deck=coShuffle(candidates); deckPos=0; deckCount++;
+}
+
+function drawCard(){if(deckPos>=deck.length)buildDeck();return deck[deckPos++];}
+
+// ── CURRENT QUESTION ──────────────────────────────────────────────────────────
+let q=null, answered=false;
+
+function nextQ(){
+  buildDeck();
+  for(let attempt=0;attempt<30;attempt++){
+    if(deckPos>=deck.length)buildDeck();
+    const c=deck[deckPos++];
+    if(lastCards.length===2&&lastCards[0]===c.id&&lastCards[1]===c.id) continue;
+    const generated=c.gen(activeKeys());
+    if(!generated) continue;
+    generated.cardKey=c.id;
+    lastCards.push(c.id);
+    if(lastCards.length>2)lastCards.shift();
+    return generated;
+  }
+  return gen_t1_next(activeKeys());
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+let TIMER_S=15, tFrac=1, tRAF=null, tLast=null;
+
+function startTimer(){
+  stopTimer(); tLast=performance.now();
+  (function tick(now){
+    if(answered){tRAF=null;return;}
+    const dt=(now-tLast)/1000; tLast=now;
+    tFrac=Math.max(0,tFrac-dt/TIMER_S);
+    renderTimer();
+    if(tFrac<=0){tRAF=null;onTimeout();}
+    else tRAF=requestAnimationFrame(tick);
+  })(performance.now());
+}
+function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
+function renderTimer(){
+  const el=document.getElementById('co-timer-fill');
+  el.style.width=(tFrac*100)+'%';
+  el.style.background=tFrac>0.5?'var(--teal)':tFrac>0.25?'var(--accent)':'var(--wrong)';
+}
+function onTimeout(){
+  if(answered)return;
+  answered=true; total++;
+  dots.push(false);
+  onProgMiss(); srRecord(q.cardKey,false);
+  setFb('Time — '+q.correct,'timeout');
+  revealAnswer(null);
+  updateStats();
+  setTimeout(next,1600);
+}
+
+// ── CIRCLE CANVAS ─────────────────────────────────────────────────────────────
+const CR=108, CCX=140, CCY=140, CSIZE=280;
+
+function circleXY(idx){
+  const a=(idx/12)*Math.PI*2-Math.PI/2;
+  return{x:CCX+CR*Math.cos(a), y:CCY+CR*Math.sin(a)};
+}
+
+function drawCircleCanvas(highlights, interactive, onTap){
+  const canvas=document.getElementById('co-circle-canvas');
+  canvas.width=CSIZE; canvas.height=CSIZE;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,CSIZE,CSIZE);
+  ctx.fillStyle='#111'; ctx.fillRect(0,0,CSIZE,CSIZE);
+
+  // Rings
+  [CR+26,CR-26].forEach(r=>{
+    ctx.beginPath(); ctx.arc(CCX,CCY,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,168,75,0.12)'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Spokes
+  for(let i=0;i<12;i++){
+    const {x,y}=circleXY(i);
+    ctx.beginPath(); ctx.moveTo(CCX,CCY); ctx.lineTo(x,y);
+    ctx.strokeStyle='rgba(200,168,75,0.06)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Center
+  ctx.fillStyle='rgba(200,168,75,0.18)';
+  ctx.font='bold 10px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('♩',CCX,CCY+4);
+
+  // Sharp/flat direction labels
+  ctx.fillStyle='rgba(127,191,176,0.3)'; ctx.font='8px IBM Plex Mono';
+  ctx.fillText('sharps →',CCX+50,CCY-CR-32);
+  ctx.fillText('← flats',CCX-50,CCY-CR-32);
+
+  const hlMap={};
+  (highlights||[]).forEach(h=>{ hlMap[h.idx]=h; });
+
+  for(let i=0;i<12;i++){
+    const {x,y}=circleXY(i);
+    const hl=hlMap[i];
+    const isActive=activeKeys().includes(CIRCLE[i]);
+
+    // Node circle
+    ctx.beginPath(); ctx.arc(x,y,20,0,Math.PI*2);
+    ctx.fillStyle=hl?(hl.color||'#c8a84b'):(isActive?'rgba(200,168,75,0.1)':'rgba(40,40,40,0.6)');
+    ctx.fill();
+    ctx.strokeStyle=hl?(hl.color||'#c8a84b'):(isActive?'rgba(200,168,75,0.6)':'rgba(80,80,80,0.4)');
+    ctx.lineWidth=hl?2:1; ctx.stroke();
+
+    // Key name
+    const lbl=hl&&hl.label?hl.label:CIRCLE_DISPLAY[i];
+    ctx.fillStyle=hl?'#000':(isActive?'rgba(232,228,218,0.9)':'rgba(232,228,218,0.25)');
+    ctx.font=(lbl.length>3?'7':'9')+'px IBM Plex Mono';
+    ctx.textAlign='center';
+    ctx.fillText(lbl,x,y+3);
+
+    // Accidental count hint (small, outside ring)
+    if(isActive&&!hl){
+      const count=KEY_ACCIDENTALS[CIRCLE[i]].length;
+      const type=KEY_TYPE[CIRCLE[i]];
+      if(count>0){
+        const hintA=(i/12)*Math.PI*2-Math.PI/2;
+        const hx=CCX+(CR+34)*Math.cos(hintA);
+        const hy=CCY+(CR+34)*Math.sin(hintA);
+        ctx.fillStyle='rgba(127,191,176,0.35)';
+        ctx.font='7px IBM Plex Mono'; ctx.textAlign='center';
+        ctx.fillText((type==='sharp'?'♯':'♭')+count,hx,hy+3);
+      }
+    }
+  }
+
+  // Tap handler
+  canvas.ontouchstart=null; canvas.onclick=null;
+  if(interactive&&onTap){
+    const handler=e=>{
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+      const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;
+      const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;
+      let best=-1,bestD=Infinity;
+      for(let i=0;i<12;i++){
+        const {x,y}=circleXY(i);
+        const d=Math.hypot(px-x,py-y);
+        if(d<bestD){bestD=d;best=i;}
+      }
+      if(bestD<30) onTap(best);
+    };
+    canvas.ontouchstart=handler; canvas.onclick=handler;
+  }
+}
+
+// ── RENDER QUESTION ───────────────────────────────────────────────────────────
+const TIER_LABELS={1:'Tier 1 · Navigation',2:'Tier 2 · Counts',3:'Tier 3 · Accidentals',4:'Tier 4 · Reverse',5:'Tier 5 · Relative'};
+const TIER_CLS={1:'t1',2:'t2',3:'t3',4:'t4',5:'t5'};
+
+function renderQ(cq){
+  const badge=document.getElementById('co-tier-badge');
+  badge.textContent=TIER_LABELS[cq.tier]; badge.className='q-tier-badge '+(TIER_CLS[cq.tier]||'');
+  document.getElementById('co-q-prompt').innerHTML=cq.prompt;
+  document.getElementById('co-keysig-display').textContent=cq.keysigDisplay||'';
+  document.getElementById('co-keysig-acc').textContent=cq.keysigAcc||'';
+
+  const wrap=document.getElementById('co-circle-wrap');
+  if(cq.showCircle){
+    wrap.style.display='flex';
+    drawCircleCanvas(cq.circleHL||[], cq.tapCircle, cq.tapCircle?(idx=>handleCircleTap(idx)):null);
+  } else {
+    wrap.style.display='none';
+  }
+
+  const grid=document.getElementById('co-ans-grid');
+  grid.innerHTML='';
+  document.getElementById('co-ans-label').textContent=cq.tapCircle?'Tap the key on the circle':'Choose the answer';
+
+  if(!cq.tapCircle&&cq.choices&&cq.choices.length){
+    const maxLen=Math.max(...cq.choices.map(c=>String(c).length));
+    const cols=maxLen<=4?6:maxLen<=8?4:maxLen<=14?2:1;
+    grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+    cq.choices.forEach(ch=>{
+      const btn=document.createElement('button');
+      btn.className='co-ans-btn'; btn.textContent=ch; btn.dataset.val=String(ch);
+      btn.onclick=()=>handleAnswer(String(ch),btn);
+      grid.appendChild(btn);
+    });
+  }
+}
+
+function revealAnswer(wrongCircleIdx){
+  if(q.tapCircle){
+    const hl=[{idx:q.correctCircleIdx,color:'#7fbfb0',label:CIRCLE[q.correctCircleIdx]}];
+    if(wrongCircleIdx!==null&&wrongCircleIdx!==q.correctCircleIdx)
+      hl.push({idx:wrongCircleIdx,color:'#c85c5c',label:CIRCLE[wrongCircleIdx]});
+    drawCircleCanvas(hl,false,null);
+  } else {
+    document.querySelectorAll('#ans-grid .ans-btn').forEach(b=>{
+      if(b.dataset.val===q.correct) b.classList.add('correct');
+    });
+  }
+}
+
+// ── HANDLE ANSWERS ────────────────────────────────────────────────────────────
+function handleAnswer(val,btn){
+  if(answered)return;
+  answered=true; stopTimer(); total++;
+  const hit=val===q.correct;
+  srRecord(q.cardKey,hit);
+  if(hit){
+    correct++; dots.push(true); btn.classList.add('correct');
+    onProgHit(); setFb('Correct',''); updateStats();
+    setTimeout(next,800);
+  } else {
+    dots.push(false); btn.classList.add('wrong');
+    onProgMiss(); revealAnswer(null);
+    setFb('Wrong — '+q.correct,'wrong'); updateStats();
+    setTimeout(next,1600);
+  }
+}
+
+function handleCircleTap(idx){
+  if(answered)return;
+  answered=true; stopTimer(); total++;
+  const hit=idx===q.correctCircleIdx;
+  srRecord(q.cardKey,hit);
+  if(hit){
+    correct++; dots.push(true);
+    onProgHit();
+    drawCircleCanvas([{idx,color:'#7fbfb0',label:CIRCLE[idx]}],false,null);
+    setFb('Correct',''); updateStats();
+    setTimeout(next,800);
+  } else {
+    dots.push(false);
+    onProgMiss(); revealAnswer(idx);
+    setFb('Wrong — '+q.correct,'wrong'); updateStats();
+    setTimeout(next,1600);
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+let correct=0,total=0,dots=[];
+
+function coGetLB(){try{return parseInt(localStorage.getItem('co5_best')||'0');}catch(e){return 0;}}
+function coSetLB(v){try{localStorage.setItem('co5_best',v);}catch(e){}}
+
+function updateStats(){
+  document.getElementById('co-h-correct').textContent=correct;
+  let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}
+  document.getElementById('co-h-streak').textContent=s;
+  if(s>coGetLB())coSetLB(s);
+  document.getElementById('co-h-best').textContent=coGetLB()||'—';
+  document.getElementById('co-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';
+  document.getElementById('co-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');
+}
+
+function setFb(msg,cls){
+  const el=document.getElementById('co-feedback');
+  el.textContent=msg; el.className='feedback-line'+(cls?' '+cls:'');
+}
+
+// ── NEXT ──────────────────────────────────────────────────────────────────────
+function next(){
+  answered=false; setFb('','');
+  q=nextQ();
+  tFrac=1; renderTimer();
+  renderQ(q);
+  startTimer();
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function toggleCfg(){
+  const p=document.getElementById('co-cfg-panel'),b=document.getElementById('co-cfg-btn');
+  const o=p.classList.toggle('open');
+  b.textContent=o?'Settings ▲':'Settings ▾';
+  if(o)stopTimer();else if(!answered)startTimer();
+}
+function setSpeed(btn){
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); TIMER_S=parseFloat(btn.dataset.s);
+}
+function resetAll(){
+  correct=0;total=0;dots=[];srData={};deck=[];deckPos=0;deckCount=0;lastCards=[];
+  currentStep=0;progHits=0;progMisses=0;
+  updateStats();updateProgUI();next();
+}
+function resetBest(){coSetLB(0);document.getElementById('co-h-best').textContent='—';}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _tt=null;
+function showToast(title,body){
+  const t=document.getElementById('unlock-toast');
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-body').textContent=body;
+  t.classList.add('show');
+  if(_tt)clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('show'),800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+
+  function setUnlockNeeded(v){ UNLOCK_NEEDED=v; updateProgUI(); }
+  function setDropNeeded(v){ DROP_NEEDED=v; updateProgUI(); }
+
+  return{
+    startTimer, stopTimer, toggleCfg, setSpeed, resetAll, resetBest,
+    setUnlockNeeded, setDropNeeded,
+    init(){
+      document.getElementById('co-h-best').textContent=coGetLB()||'—';
+      updateProgUI(); next();
+    }
+  };
+})();
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
 
@@ -2205,24 +3007,719 @@ function showToast(title,body){
   };
 })();
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CIRCLE OF 5THS — CO
+// ══════════════════════════════════════════════════════════════════════════════
+const CO=(()=>{
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MUSIC DATA
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Circle order clockwise, index 0 = C (top)
+const CIRCLE = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
+// Display labels (enharmonic pairs shown for ambiguous positions)
+const CIRCLE_DISPLAY = ['C','G','D','A','E','B','F#/Gb','Db/C#','Ab','Eb','Bb','F'];
+
+const KEY_TYPE = {C:'none',G:'sharp',D:'sharp',A:'sharp',E:'sharp',B:'sharp','F#':'sharp',
+                  Db:'flat',Ab:'flat',Eb:'flat',Bb:'flat',F:'flat',Gb:'flat'};
+
+const KEY_ACCIDENTALS = {
+  C:[],
+  G:['F#'],
+  D:['F#','C#'],
+  A:['F#','C#','G#'],
+  E:['F#','C#','G#','D#'],
+  B:['F#','C#','G#','D#','A#'],
+  'F#':['F#','C#','G#','D#','A#','E#'],
+  Db:['Bb','Eb','Ab','Db','Gb'],
+  Ab:['Bb','Eb','Ab','Db'],
+  Eb:['Bb','Eb','Ab'],
+  Bb:['Bb','Eb'],
+  F:['Bb'],
+};
+
+const SHARPS_IN_ORDER = ['F#','C#','G#','D#','A#','E#','B#'];
+const FLATS_IN_ORDER  = ['Bb','Eb','Ab','Db','Gb','Cb','Fb'];
+
+const REL_MINOR = {C:'Am',G:'Em',D:'Bm',A:'F#m',E:'C#m',B:'G#m','F#':'D#m',
+                   Db:'Bbm',Ab:'Fm',Eb:'Cm',Bb:'Gm',F:'Dm'};
+const REL_MAJOR = {};
+Object.entries(REL_MINOR).forEach(([maj,min])=>{ REL_MAJOR[min]=maj; });
+const ALL_MINORS = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm'];
+
+// ── PROGRESSION STEPS ────────────────────────────────────────────────────────
+// Unlocks outward from C: C→G+F→D+Bb→A+Eb→E+Ab→B+Db→F#
+// Then tiers 2-5 unlock progressively
+const UNLOCK_STEPS = [
+  {keys:['C','G','F'],           tier:1, label:'C · G · F'},
+  {keys:['C','G','F','D','Bb'],  tier:1, label:'+ D · Bb'},
+  {keys:['C','G','F','D','Bb','A','Eb'], tier:1, label:'+ A · Eb'},
+  {keys:['C','G','F','D','Bb','A','Eb','E','Ab'], tier:2, label:'+ E · Ab — Tier 2 unlocked'},
+  {keys:['C','G','F','D','Bb','A','Eb','E','Ab','B','Db'], tier:2, label:'+ B · Db'},
+  {keys:[...CIRCLE], tier:3, label:'All 12 keys — Tier 3 unlocked'},
+  {keys:[...CIRCLE], tier:4, label:'Tier 4 — Reverse lookup'},
+  {keys:[...CIRCLE], tier:5, label:'Tier 5 — Relative minors'},
+];
+
+let currentStep=0, UNLOCK_NEEDED=12, DROP_NEEDED=5;
+let progHits=0, progMisses=0;
+
+function activeKeys(){ return UNLOCK_STEPS[currentStep].keys; }
+function activeTier(){ return UNLOCK_STEPS[currentStep].tier; }
+
+function updateProgUI(){
+  const atMax = currentStep >= UNLOCK_STEPS.length-1;
+  const next = UNLOCK_STEPS[Math.min(currentStep+1, UNLOCK_STEPS.length-1)];
+  document.getElementById('co-prog-label').textContent = atMax?'Full mastery!':'Unlock: '+next.label;
+  document.getElementById('co-prog-counter').textContent = atMax?'✓':progHits+' / '+UNLOCK_NEEDED;
+  document.getElementById('co-prog-fill').style.width = atMax?'100%':(progHits/UNLOCK_NEEDED*100)+'%';
+  document.getElementById('co-hdr-sub').textContent = 'Tier '+activeTier()+' · '+activeKeys().join(' ');
+  const w=document.getElementById('co-prog-warn');
+  if(progMisses===DROP_NEEDED-1&&currentStep>0){
+    w.textContent='⚠ One more miss drops back'; w.classList.add('show');
+  } else { w.textContent=''; w.classList.remove('show'); }
+}
+
+function onProgHit(){
+  progMisses=0;
+  tFrac=Math.min(1,tFrac+0.25);
+  progHits++;
+  if(progHits>=UNLOCK_NEEDED){
+    progHits=0;
+    if(currentStep<UNLOCK_STEPS.length-1){
+      currentStep++;
+      showToast('Unlocked',UNLOCK_STEPS[currentStep].label);
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-unlock');
+    }
+  }
+  updateProgUI();
+}
+
+function onProgMiss(){
+  progHits=0; progMisses++;
+  if(progMisses>=DROP_NEEDED){
+    progMisses=0;
+    if(currentStep>0){
+      currentStep--;
+      document.body.classList.remove('flash-unlock','flash-lock');
+      void document.body.offsetWidth;
+      document.body.classList.add('flash-lock');
+    }
+  }
+  updateProgUI();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function coShuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+function without(a,v){return a.filter(x=>x!==v);}
+function circleIdx(k){return CIRCLE.indexOf(k);}
+function circleNext(k){return CIRCLE[(circleIdx(k)+1)%12];}
+function circlePrev(k){return CIRCLE[(circleIdx(k)+11)%12];}
+
+function makeChoices(correct, pool, n=5){
+  const wrong=coShuffle(without(pool,correct)).slice(0,n-1);
+  return coShuffle([correct,...wrong]);
+}
+
+function nearbyKeys(k,n){
+  const idx=circleIdx(k);
+  const out=[];
+  for(let d=1;d<=6&&out.length<n;d++){
+    out.push(CIRCLE[(idx+d)%12]);
+    if(out.length<n) out.push(CIRCLE[(idx+12-d)%12]);
+  }
+  return out.slice(0,n);
+}
+
+// ── QUESTION GENERATORS ───────────────────────────────────────────────────────
+// Each returns a question object or null if not applicable for given keys
+
+// T1: Navigation
+function gen_t1_next(keys){
+  const k=rnd(keys);
+  const correct=circleNext(k);
+  return {
+    tier:1, id:'t1_next_'+k,
+    prompt:`What key is a <strong>5th above</strong> <em>${k}</em>? (clockwise)`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:k},{idx:(circleIdx(k)+1)%12,color:'rgba(127,191,176,0.5)',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+function gen_t1_prev(keys){
+  const k=rnd(keys);
+  const correct=circlePrev(k);
+  return {
+    tier:1, id:'t1_prev_'+k,
+    prompt:`What key is a <strong>4th above</strong> <em>${k}</em>? (counter-clockwise)`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:k},{idx:(circleIdx(k)+11)%12,color:'rgba(127,191,176,0.5)',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+
+function gen_t1_identify(keys){
+  const k=rnd(keys);
+  return {
+    tier:1, id:'t1_id_'+k,
+    prompt:`What key is <strong>highlighted</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct:k, choices:makeChoices(k,CIRCLE,6),
+    showCircle:true, circleHL:[{idx:circleIdx(k),color:'#c8a84b',label:'?'}],
+    tapCircle:false,
+  };
+}
+
+// T2: Counts
+function gen_t2_howmany(keys){
+  const k=rnd(keys);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  const label=type==='none'?'accidentals':(type+'s');
+  const countStr=String(count);
+  // Build distractor counts
+  const pool=[...new Set([0,1,2,3,4,5,6,7].map(String))].filter(x=>x!==countStr);
+  const choices=coShuffle([countStr,...coShuffle(pool).slice(0,4)]);
+  return {
+    tier:2, id:'t2_count_'+k,
+    prompt:`How many <strong>${label}</strong> does <em>${k} major</em> have?`,
+    keysigDisplay:k,
+    keysigAcc:count===0?'no sharps or flats':(count+' '+(type==='sharp'?'sharp':'flat')+(count!==1?'s':'')),
+    correct:countStr, choices,
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t2_whichkey(keys){
+  // Given a count+type, name a key
+  const k=rnd(keys);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  if(type==='none'){
+    const correct='C';
+    if(!keys.includes(correct)) return null;
+    return {
+      tier:2, id:'t2_noacckey',
+      prompt:`Which active key has <strong>no sharps or flats</strong>?`,
+      keysigDisplay:'', keysigAcc:'',
+      correct, choices:makeChoices(correct,keys.length>=5?keys:CIRCLE,5),
+      showCircle:false, circleHL:[], tapCircle:false,
+    };
+  }
+  const typeLabel=type==='sharp'?`${count} sharp${count!==1?'s':''}` : `${count} flat${count!==1?'s':''}`;
+  // Find all active keys matching this count+type
+  const matches=keys.filter(x=>KEY_ACCIDENTALS[x].length===count&&KEY_TYPE[x]===type);
+  if(!matches.length) return null;
+  const correct=rnd(matches);
+  const pool=without(keys.length>=5?keys:CIRCLE, correct);
+  return {
+    tier:2, id:'t2_wk_'+count+type,
+    prompt:`Which key has <strong>${typeLabel}</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T3: Specific accidentals
+function gen_t3_listaccs(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0&&KEY_ACCIDENTALS[k].length<=5);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=accs.join(' ');
+  const type=KEY_TYPE[k];
+  const pool=type==='sharp'?SHARPS_IN_ORDER:FLATS_IN_ORDER;
+  const wrongs=new Set();
+  for(let i=0;i<40&&wrongs.size<3;i++){
+    const w=coShuffle(pool).slice(0,accs.length).join(' ');
+    if(w!==correct) wrongs.add(w);
+  }
+  if(accs.length>1) wrongs.add(accs.slice(0,-1).join(' '));
+  if(accs.length<pool.length) wrongs.add(pool.slice(0,accs.length+1).join(' '));
+  const choices=coShuffle([correct,...[...wrongs].slice(0,3)]);
+  return {
+    tier:3, id:'t3_list_'+k,
+    prompt:`Name the <strong>${type==='sharp'?'sharps':'flats'}</strong> in <em>${k} major</em> in order`,
+    keysigDisplay:k, keysigAcc:(type==='sharp'?'♯':'♭')+accs.length,
+    correct, choices,
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t3_lastacc(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=accs[accs.length-1];
+  const type=KEY_TYPE[k];
+  const pool=without(type==='sharp'?SHARPS_IN_ORDER:FLATS_IN_ORDER, correct);
+  return {
+    tier:3, id:'t3_last_'+k,
+    prompt:`What is the <strong>last ${type==='sharp'?'sharp':'flat'} added</strong> in <em>${k} major</em>?`,
+    keysigDisplay:k, keysigAcc:accs.length+' '+(type==='sharp'?'sharp':'flat')+(accs.length!==1?'s':''),
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T4: Reverse lookup
+function gen_t4_fromcount(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>0);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const count=KEY_ACCIDENTALS[k].length;
+  const type=KEY_TYPE[k];
+  const typeLabel=type==='sharp'?`${count} sharp${count!==1?'s':''}` : `${count} flat${count!==1?'s':''}`;
+  const correct=k;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:4, id:'t4_fc_'+k,
+    prompt:`A major key has <strong>${typeLabel}</strong>. Which key?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t4_fromlist(keys){
+  const eligible=keys.filter(k=>KEY_ACCIDENTALS[k].length>=1&&KEY_ACCIDENTALS[k].length<=4);
+  if(!eligible.length) return null;
+  const k=rnd(eligible);
+  const accs=KEY_ACCIDENTALS[k];
+  const correct=k;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:4, id:'t4_fl_'+k,
+    prompt:`Key signature: <em>${accs.join('  ')}</em>. What major key?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// T5: Relative minors
+function gen_t5_relmin(keys){
+  const k=rnd(keys);
+  const correct=REL_MINOR[k];
+  if(!correct) return null;
+  const pool=without(ALL_MINORS,correct);
+  return {
+    tier:5, id:'t5_rm_'+k,
+    prompt:`What is the <strong>relative minor</strong> of <em>${k} major</em>?`,
+    keysigDisplay:k, keysigAcc:'relative minor shares key signature',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+function gen_t5_relmaj(keys){
+  const eligible=keys.map(k=>REL_MINOR[k]).filter(Boolean);
+  if(!eligible.length) return null;
+  const minor=rnd(eligible);
+  const correct=REL_MAJOR[minor];
+  if(!correct) return null;
+  const pool=without(keys.length>=5?keys:CIRCLE,correct);
+  return {
+    tier:5, id:'t5_rmaj_'+minor,
+    prompt:`<em>${minor}</em> is the relative minor of which <strong>major key</strong>?`,
+    keysigDisplay:'', keysigAcc:'',
+    correct, choices:makeChoices(correct,pool,5),
+    showCircle:false, circleHL:[], tapCircle:false,
+  };
+}
+
+// Generator registry by tier
+const GENERATORS = {
+  1:[gen_t1_next, gen_t1_prev, gen_t1_identify],
+  2:[gen_t2_howmany, gen_t2_whichkey],
+  3:[gen_t3_listaccs, gen_t3_lastacc],
+  4:[gen_t4_fromcount, gen_t4_fromlist],
+  5:[gen_t5_relmin, gen_t5_relmaj],
+};
+
+// ── SR DECK ───────────────────────────────────────────────────────────────────
+const SR_FREQ=[1,1,2,4,8];
+let srData={}, deckCount=0, deck=[], deckPos=0, lastCards=[];
+
+function srGet(id){if(!srData[id])srData[id]={correct:0,total:0,nextDeck:0};return srData[id];}
+function srRecord(id,hit){const d=srGet(id);d.total++;if(hit)d.correct++;}
+function srTier(id){
+  const d=srGet(id);if(d.total===0)return 0;
+  const acc=d.correct/d.total;
+  if(acc<0.5)return 1;if(acc<0.75)return 2;if(acc<0.9)return 3;
+  return d.total>=3?4:3;
+}
+
+function buildDeck(){
+  const keys=activeKeys(), tier=activeTier();
+  const candidates=[];
+  for(let t=1;t<=tier;t++){
+    for(const gen of (GENERATORS[t]||[])){
+      for(const k of keys){
+        const id=`${gen.name}_${k}`;
+        const d=srGet(id);
+        if(deckCount>=d.nextDeck){
+          candidates.push({gen,k,id});
+          d.nextDeck=deckCount+SR_FREQ[srTier(id)];
+        }
+      }
+    }
+  }
+  if(!candidates.length){
+    for(let t=1;t<=tier;t++){
+      for(const gen of (GENERATORS[t]||[])){
+        for(const k of keys){
+          const id=`${gen.name}_${k}`;
+          const d=srGet(id);
+          candidates.push({gen,k,id});
+          d.nextDeck=deckCount+SR_FREQ[srTier(id)];
+        }
+      }
+    }
+  }
+  deck=coShuffle(candidates); deckPos=0; deckCount++;
+}
+
+function drawCard(){if(deckPos>=deck.length)buildDeck();return deck[deckPos++];}
+
+// ── CURRENT QUESTION ──────────────────────────────────────────────────────────
+let q=null, answered=false;
+
+function nextQ(){
+  buildDeck();
+  for(let attempt=0;attempt<30;attempt++){
+    if(deckPos>=deck.length)buildDeck();
+    const c=deck[deckPos++];
+    if(lastCards.length===2&&lastCards[0]===c.id&&lastCards[1]===c.id) continue;
+    const generated=c.gen(activeKeys());
+    if(!generated) continue;
+    generated.cardKey=c.id;
+    lastCards.push(c.id);
+    if(lastCards.length>2)lastCards.shift();
+    return generated;
+  }
+  return gen_t1_next(activeKeys());
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+let TIMER_S=15, tFrac=1, tRAF=null, tLast=null;
+
+function startTimer(){
+  stopTimer(); tLast=performance.now();
+  (function tick(now){
+    if(answered){tRAF=null;return;}
+    const dt=(now-tLast)/1000; tLast=now;
+    tFrac=Math.max(0,tFrac-dt/TIMER_S);
+    renderTimer();
+    if(tFrac<=0){tRAF=null;onTimeout();}
+    else tRAF=requestAnimationFrame(tick);
+  })(performance.now());
+}
+function stopTimer(){if(tRAF){cancelAnimationFrame(tRAF);tRAF=null;}}
+function renderTimer(){
+  const el=document.getElementById('co-timer-fill');
+  el.style.width=(tFrac*100)+'%';
+  el.style.background=tFrac>0.5?'var(--teal)':tFrac>0.25?'var(--accent)':'var(--wrong)';
+}
+function onTimeout(){
+  if(answered)return;
+  answered=true; total++;
+  dots.push(false);
+  onProgMiss(); srRecord(q.cardKey,false);
+  setFb('Time — '+q.correct,'timeout');
+  revealAnswer(null);
+  updateStats();
+  setTimeout(next,1600);
+}
+
+// ── CIRCLE CANVAS ─────────────────────────────────────────────────────────────
+const CR=108, CCX=140, CCY=140, CSIZE=280;
+
+function circleXY(idx){
+  const a=(idx/12)*Math.PI*2-Math.PI/2;
+  return{x:CCX+CR*Math.cos(a), y:CCY+CR*Math.sin(a)};
+}
+
+function drawCircleCanvas(highlights, interactive, onTap){
+  const canvas=document.getElementById('co-circle-canvas');
+  canvas.width=CSIZE; canvas.height=CSIZE;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,CSIZE,CSIZE);
+  ctx.fillStyle='#111'; ctx.fillRect(0,0,CSIZE,CSIZE);
+
+  // Rings
+  [CR+26,CR-26].forEach(r=>{
+    ctx.beginPath(); ctx.arc(CCX,CCY,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,168,75,0.12)'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Spokes
+  for(let i=0;i<12;i++){
+    const {x,y}=circleXY(i);
+    ctx.beginPath(); ctx.moveTo(CCX,CCY); ctx.lineTo(x,y);
+    ctx.strokeStyle='rgba(200,168,75,0.06)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Center
+  ctx.fillStyle='rgba(200,168,75,0.18)';
+  ctx.font='bold 10px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('♩',CCX,CCY+4);
+
+  // Sharp/flat direction labels
+  ctx.fillStyle='rgba(127,191,176,0.3)'; ctx.font='8px IBM Plex Mono';
+  ctx.fillText('sharps →',CCX+50,CCY-CR-32);
+  ctx.fillText('← flats',CCX-50,CCY-CR-32);
+
+  const hlMap={};
+  (highlights||[]).forEach(h=>{ hlMap[h.idx]=h; });
+
+  for(let i=0;i<12;i++){
+    const {x,y}=circleXY(i);
+    const hl=hlMap[i];
+    const isActive=activeKeys().includes(CIRCLE[i]);
+
+    // Node circle
+    ctx.beginPath(); ctx.arc(x,y,20,0,Math.PI*2);
+    ctx.fillStyle=hl?(hl.color||'#c8a84b'):(isActive?'rgba(200,168,75,0.1)':'rgba(40,40,40,0.6)');
+    ctx.fill();
+    ctx.strokeStyle=hl?(hl.color||'#c8a84b'):(isActive?'rgba(200,168,75,0.6)':'rgba(80,80,80,0.4)');
+    ctx.lineWidth=hl?2:1; ctx.stroke();
+
+    // Key name
+    const lbl=hl&&hl.label?hl.label:CIRCLE_DISPLAY[i];
+    ctx.fillStyle=hl?'#000':(isActive?'rgba(232,228,218,0.9)':'rgba(232,228,218,0.25)');
+    ctx.font=(lbl.length>3?'7':'9')+'px IBM Plex Mono';
+    ctx.textAlign='center';
+    ctx.fillText(lbl,x,y+3);
+
+    // Accidental count hint (small, outside ring)
+    if(isActive&&!hl){
+      const count=KEY_ACCIDENTALS[CIRCLE[i]].length;
+      const type=KEY_TYPE[CIRCLE[i]];
+      if(count>0){
+        const hintA=(i/12)*Math.PI*2-Math.PI/2;
+        const hx=CCX+(CR+34)*Math.cos(hintA);
+        const hy=CCY+(CR+34)*Math.sin(hintA);
+        ctx.fillStyle='rgba(127,191,176,0.35)';
+        ctx.font='7px IBM Plex Mono'; ctx.textAlign='center';
+        ctx.fillText((type==='sharp'?'♯':'♭')+count,hx,hy+3);
+      }
+    }
+  }
+
+  // Tap handler
+  canvas.ontouchstart=null; canvas.onclick=null;
+  if(interactive&&onTap){
+    const handler=e=>{
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+      const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*sx;
+      const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*sy;
+      let best=-1,bestD=Infinity;
+      for(let i=0;i<12;i++){
+        const {x,y}=circleXY(i);
+        const d=Math.hypot(px-x,py-y);
+        if(d<bestD){bestD=d;best=i;}
+      }
+      if(bestD<30) onTap(best);
+    };
+    canvas.ontouchstart=handler; canvas.onclick=handler;
+  }
+}
+
+// ── RENDER QUESTION ───────────────────────────────────────────────────────────
+const TIER_LABELS={1:'Tier 1 · Navigation',2:'Tier 2 · Counts',3:'Tier 3 · Accidentals',4:'Tier 4 · Reverse',5:'Tier 5 · Relative'};
+const TIER_CLS={1:'t1',2:'t2',3:'t3',4:'t4',5:'t5'};
+
+function renderQ(cq){
+  const badge=document.getElementById('co-tier-badge');
+  badge.textContent=TIER_LABELS[cq.tier]; badge.className='q-tier-badge '+(TIER_CLS[cq.tier]||'');
+  document.getElementById('co-q-prompt').innerHTML=cq.prompt;
+  document.getElementById('co-keysig-display').textContent=cq.keysigDisplay||'';
+  document.getElementById('co-keysig-acc').textContent=cq.keysigAcc||'';
+
+  const wrap=document.getElementById('co-circle-wrap');
+  if(cq.showCircle){
+    wrap.style.display='flex';
+    drawCircleCanvas(cq.circleHL||[], cq.tapCircle, cq.tapCircle?(idx=>handleCircleTap(idx)):null);
+  } else {
+    wrap.style.display='none';
+  }
+
+  const grid=document.getElementById('co-ans-grid');
+  grid.innerHTML='';
+  document.getElementById('co-ans-label').textContent=cq.tapCircle?'Tap the key on the circle':'Choose the answer';
+
+  if(!cq.tapCircle&&cq.choices&&cq.choices.length){
+    const maxLen=Math.max(...cq.choices.map(c=>String(c).length));
+    const cols=maxLen<=4?6:maxLen<=8?4:maxLen<=14?2:1;
+    grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+    cq.choices.forEach(ch=>{
+      const btn=document.createElement('button');
+      btn.className='co-ans-btn'; btn.textContent=ch; btn.dataset.val=String(ch);
+      btn.onclick=()=>handleAnswer(String(ch),btn);
+      grid.appendChild(btn);
+    });
+  }
+}
+
+function revealAnswer(wrongCircleIdx){
+  if(q.tapCircle){
+    const hl=[{idx:q.correctCircleIdx,color:'#7fbfb0',label:CIRCLE[q.correctCircleIdx]}];
+    if(wrongCircleIdx!==null&&wrongCircleIdx!==q.correctCircleIdx)
+      hl.push({idx:wrongCircleIdx,color:'#c85c5c',label:CIRCLE[wrongCircleIdx]});
+    drawCircleCanvas(hl,false,null);
+  } else {
+    document.querySelectorAll('#ans-grid .ans-btn').forEach(b=>{
+      if(b.dataset.val===q.correct) b.classList.add('correct');
+    });
+  }
+}
+
+// ── HANDLE ANSWERS ────────────────────────────────────────────────────────────
+function handleAnswer(val,btn){
+  if(answered)return;
+  answered=true; stopTimer(); total++;
+  const hit=val===q.correct;
+  srRecord(q.cardKey,hit);
+  if(hit){
+    correct++; dots.push(true); btn.classList.add('correct');
+    onProgHit(); setFb('Correct',''); updateStats();
+    setTimeout(next,800);
+  } else {
+    dots.push(false); btn.classList.add('wrong');
+    onProgMiss(); revealAnswer(null);
+    setFb('Wrong — '+q.correct,'wrong'); updateStats();
+    setTimeout(next,1600);
+  }
+}
+
+function handleCircleTap(idx){
+  if(answered)return;
+  answered=true; stopTimer(); total++;
+  const hit=idx===q.correctCircleIdx;
+  srRecord(q.cardKey,hit);
+  if(hit){
+    correct++; dots.push(true);
+    onProgHit();
+    drawCircleCanvas([{idx,color:'#7fbfb0',label:CIRCLE[idx]}],false,null);
+    setFb('Correct',''); updateStats();
+    setTimeout(next,800);
+  } else {
+    dots.push(false);
+    onProgMiss(); revealAnswer(idx);
+    setFb('Wrong — '+q.correct,'wrong'); updateStats();
+    setTimeout(next,1600);
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+let correct=0,total=0,dots=[];
+
+function coGetLB(){try{return parseInt(localStorage.getItem('co5_best')||'0');}catch(e){return 0;}}
+function coSetLB(v){try{localStorage.setItem('co5_best',v);}catch(e){}}
+
+function updateStats(){
+  document.getElementById('co-h-correct').textContent=correct;
+  let s=0;for(let i=dots.length-1;i>=0;i--){if(dots[i])s++;else break;}
+  document.getElementById('co-h-streak').textContent=s;
+  if(s>coGetLB())coSetLB(s);
+  document.getElementById('co-h-best').textContent=coGetLB()||'—';
+  document.getElementById('co-h-pct').textContent=total?Math.round(100*correct/total)+'%':'—';
+  document.getElementById('co-streak-row').innerHTML=dots.slice(-16).map(d=>`<div class="sdot ${d?'h':'m'}"></div>`).join('');
+}
+
+function setFb(msg,cls){
+  const el=document.getElementById('co-feedback');
+  el.textContent=msg; el.className='feedback-line'+(cls?' '+cls:'');
+}
+
+// ── NEXT ──────────────────────────────────────────────────────────────────────
+function next(){
+  answered=false; setFb('','');
+  q=nextQ();
+  tFrac=1; renderTimer();
+  renderQ(q);
+  startTimer();
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function toggleCfg(){
+  const p=document.getElementById('co-cfg-panel'),b=document.getElementById('co-cfg-btn');
+  const o=p.classList.toggle('open');
+  b.textContent=o?'Settings ▲':'Settings ▾';
+  if(o)stopTimer();else if(!answered)startTimer();
+}
+function setSpeed(btn){
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); TIMER_S=parseFloat(btn.dataset.s);
+}
+function resetAll(){
+  correct=0;total=0;dots=[];srData={};deck=[];deckPos=0;deckCount=0;lastCards=[];
+  currentStep=0;progHits=0;progMisses=0;
+  updateStats();updateProgUI();next();
+}
+function resetBest(){coSetLB(0);document.getElementById('co-h-best').textContent='—';}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _tt=null;
+function showToast(title,body){
+  const t=document.getElementById('unlock-toast');
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-body').textContent=body;
+  t.classList.add('show');
+  if(_tt)clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('show'),800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+
+  function setUnlockNeeded(v){ UNLOCK_NEEDED=v; updateProgUI(); }
+  function setDropNeeded(v){ DROP_NEEDED=v; updateProgUI(); }
+
+  return{
+    startTimer, stopTimer, toggleCfg, setSpeed, resetAll, resetBest,
+    setUnlockNeeded, setDropNeeded,
+    init(){
+      document.getElementById('co-h-best').textContent=coGetLB()||'—';
+      updateProgUI(); next();
+    }
+  };
+})();
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 TR.init();
 DI.init();
 GN.init();
 SN.init();
 NT.init();
+CO.init();
 rotationTimer.onSwitch('triads');
 
 // ── VISIBILITY: pause everything when tab/window is hidden ───────────────────
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){
-    TR.stopTimer(); DI.stopTimer(); GN._stopProg(); SN._stopProg(); NT.stopTimer();
+    TR.stopTimer(); DI.stopTimer(); GN._stopProg(); SN._stopProg(); NT.stopTimer(); CO.stopTimer();
   } else {
     if(_currentApp==='triads'&&!TR.answered) TR.startTimer();
     if(_currentApp==='diatonic'&&!DI.answered) DI.startTimer();
     if(_currentApp==='guitar') GN._startProg();
     if(_currentApp==='steel')  SN._startProg();
     if(_currentApp==='notation') NT.startTimer();
+    if(_currentApp==='circle') CO.startTimer();
   }
 });
 </script>
